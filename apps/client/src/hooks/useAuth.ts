@@ -10,16 +10,6 @@ export function useAuth() {
   useEffect(() => {
     const timeout = setTimeout(() => setIsLoading(false), 5000)
 
-    authService.getSession()
-      .then((sessionUser) => {
-        setUser(sessionUser)
-        queryClient.setQueryData(['auth', 'user'], sessionUser)
-      })
-      .catch(console.error)
-      .finally(() => {
-        setIsLoading(false)
-        clearTimeout(timeout)
-      })
 
     const { data: { subscription } } = authService.onAuthStateChange((authUser) => {
       setUser(authUser)
