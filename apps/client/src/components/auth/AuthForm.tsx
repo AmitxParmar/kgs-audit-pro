@@ -28,13 +28,11 @@ export function AuthForm() {
     try {
       switch (mode) {
         case 'login': {
-          const data = await login({ email: formData.email, password: formData.password })
-          // data.session is present on successful login — navigate immediately
-          if (data?.session || data?.user) {
-            navigate('/', { replace: true })
-          }
-          break
-        }
+  await login({ email: formData.email, password: formData.password })
+  // Don't wait for user state — token is set, just navigate
+  window.location.href = '/'   // ← hard redirect, bypasses React Router state
+  break
+}
 
         case 'signup': {
           const data = await signup({
@@ -75,10 +73,12 @@ export function AuthForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const error = mode === 'login'           ? loginError
-              : mode === 'signup'          ? signupError
-              : mode === 'forgot-password' ? resetPasswordError
-              : updatePasswordError
+  const error = (
+  mode === 'login'           ? loginError :
+  mode === 'signup'          ? signupError :
+  mode === 'forgot-password' ? resetPasswordError :
+  updatePasswordError
+) as Error | null   // ← cast from unknown to Error | null
 
   const isLoading = mode === 'login'           ? isLoggingIn
                   : mode === 'signup'          ? isSigningUp
@@ -117,19 +117,24 @@ export function AuthForm() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
 
-          {/* Success banner */}
-          {successMessage && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md text-sm">
-              {successMessage}
-            </div>
-          )}
+     
+    {successMessage && (
+      <div className={[
+        'bg-blue-50 border border-blue-200',
+        'text-blue-700 px-4 py-3 rounded-md text-sm'
+      ].join(' ')}>
+        {successMessage}
+      </div>
+    )}
 
-          {/* Error banner */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {(error as Error)?.message || 'Authentication failed. Please check your credentials.'}
-            </div>
-          )}
+    {error && (
+  <div className={[
+    'bg-red-50 border border-red-200',
+    'text-red-600 px-4 py-3 rounded-md text-sm'
+  ].join(' ')}>
+    {(error as Error)?.message || 'Authentication failed. Please check your credentials.'}
+  </div>
+)}      
 
           <div className="space-y-4">
             {/* Name — signup only */}
