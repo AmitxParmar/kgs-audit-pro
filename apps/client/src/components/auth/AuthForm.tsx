@@ -25,53 +25,46 @@ export function AuthForm() {
   e.preventDefault()
   setSuccessMessage('')
 
-  if (mode === 'login') {
-    try {
-      await login({ email: formData.email, password: formData.password })
-    } catch (err) {
-      console.error('login error:', err)
-    } finally {
-      // Token is in localStorage regardless — just go
-      window.location.href = '/'
-    }
-    return
-  }
+  try {
+    switch (mode) {
+      case 'login': {
+        await login({ email: formData.email, password: formData.password })
+        // Navigation will happen automatically when user state updates
+        break
+      }
 
-  if (mode === 'signup') {
-    try {
-      await signup({
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        name: formData.name,
-      })
-    } catch (err) {
-      console.error('signup error:', err)
-    } finally {
-      window.location.href = '/'
-    }
-    return
-  }
+      case 'signup': {
+        const data = await signup({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          name: formData.name,
+        })
+        if (data?.user) {
+          // Email confirmation OFF — logged in immediately
+          // Navigation will happen automatically when user state updates
+        } else {
+          // Email confirmation ON — show message
+          setSuccessMessage('✉ Check your email to confirm your account.')
+          setMode('login')
+        }
+        break
+      }
 
-  if (mode === 'forgot-password') {
-    try {
-      await resetPassword(formData.email)
-      setSuccessMessage('✉ Password reset link sent — check your email.')
-      setMode('login')
-    } catch (err) {
-      console.error(err)
-    }
-    return
-  }
+      case 'forgot-password':
+        await resetPassword(formData.email)
+        setSuccessMessage('✉ Password reset link sent — check your email.')
+        setMode('login')
+        break
 
-  if (mode === 'reset-password') {
-    try {
-      await updatePassword(formData.password)
-      setSuccessMessage('✓ Password updated. Please sign in.')
-      setMode('login')
-    } catch (err) {
-      console.error(err)
+      case 'reset-password':
+        await updatePassword(formData.password)
+        setSuccessMessage('✓ Password updated. Please sign in.')
+        setMode('login')
+        break
     }
+  } catch (err) {
+    console.error('Auth error:', err)
   }
 }
 

@@ -1,20 +1,39 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { authService, AuthUser } from '../lib/auth'
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export function useAuth() {
   const queryClient               = useQueryClient()
+  const navigate                  = useNavigate()
   const [user, setUser]           = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsLoading(false), 5000)
 
+    // 1. Check if there's an existing session on page load
+    authService.getSession()
+      .then((sessionUser) => {
+        setUser(sessionUser)
+        queryClient.setQueryData(['auth', 'user'], sessionUser)
+      })
+      .catch(console.error)
+      .finally(() => {
+        setIsLoading(false)
+        clearTimeout(timeout)
+      })
 
+    // 2. Listen for login/logout changes
     const { data: { subscription } } = authService.onAuthStateChange((authUser) => {
       setUser(authUser)
       setIsLoading(false)
       queryClient.setQueryData(['auth', 'user'], authUser)
+      
+      // Auto-navigate to dashboard on successful login
+      if (authUser && window.location.pathname === '/login') {
+        navigate('/', { replace: true })
+      }
     })
 
     return () => {
