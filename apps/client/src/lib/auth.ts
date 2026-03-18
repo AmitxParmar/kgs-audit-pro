@@ -26,6 +26,14 @@ export interface UpdatePasswordData {
   confirmPassword: string
 }
 
+export interface AuthUser {
+  id:    string
+  email: string
+  name?: string
+  user_role?: 'super_admin' | 'cb_admin' | 'lead_auditor' | 'auditor' | 'staff' | 'accreditation_manager'
+  cb_id?: string
+}
+
 export const authService = {
   async login(credentials: LoginCredentials) {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -37,21 +45,24 @@ export const authService = {
     return data
   },
 
-  signup: async ({ name, email, password }: {
-  name: string
-  email: string
-  password: string
-}) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { name }   // stores name in user_metadata
+  async signup(credentials: SignupCredentials) {
+    if (credentials.password !== credentials.confirmPassword) {
+      throw new Error('Passwords do not match')
     }
-  })
-  if (error) throw error
-  return data
-},
+
+    const { data, error } = await supabase.auth.signUp({
+      email: credentials.email,
+      password: credentials.password,
+      options: {
+        data: {
+          name: credentials.name,
+        },
+      },
+    })
+
+    if (error) throw error
+    return data
+  },
 
   async resetPassword(email: string) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -84,24 +95,42 @@ export const authService = {
   getSession: async (): Promise<AuthUser | null> => {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return null
+
+  // Fetch role from users table
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role, cb_id')
+    .eq('id', session.user.id)
+    .single()
+
   return {
     id:    session.user.id,
     email: session.user.email!,
     name:  session.user.user_metadata?.name,
+    user_role:  profile?.role,
+    role:  profile?.role, // Keep for backward compatibility
+    cb_id: profile?.cb_id,
   }
 },
 
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        callback({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name,
-        })
-      } else {
-        callback(null)
-      }
+  return supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (!session?.user) { callback(null); return }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role, cb_id')
+      .eq('id', session.user.id)
+      .single()
+
+    callback({
+      id:    session.user.id,
+      email: session.user.email!,
+      name:  session.user.user_metadata?.name,
+      role:  profile?.role,
+      user_role: profile?.role,
+      cb_id: profile?.cb_id,
     })
-  },
+  })
+},
 }
