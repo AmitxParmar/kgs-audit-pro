@@ -1,0 +1,6 @@
+{
+  "buildCommand": "turbo run build --filter=@kgs-audit-pro/client",
+  "outputDirectory": "apps/client/dist",
+  "installCommand": "npm install",
+  "framework": null
+}
