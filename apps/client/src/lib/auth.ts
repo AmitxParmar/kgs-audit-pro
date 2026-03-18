@@ -37,24 +37,21 @@ export const authService = {
     return data
   },
 
-  async signup(credentials: SignupCredentials) {
-    if (credentials.password !== credentials.confirmPassword) {
-      throw new Error('Passwords do not match')
+  signup: async ({ name, email, password }: {
+  name: string
+  email: string
+  password: string
+}) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name }   // stores name in user_metadata
     }
-
-    const { data, error } = await supabase.auth.signUp({
-      email: credentials.email,
-      password: credentials.password,
-      options: {
-        data: {
-          name: credentials.name,
-        },
-      },
-    })
-
-    if (error) throw error
-    return data
-  },
+  })
+  if (error) throw error
+  return data
+},
 
   async resetPassword(email: string) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
