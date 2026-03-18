@@ -5,9 +5,9 @@ const zod_1 = require("zod");
 const envSchema = zod_1.z.object({
     NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
     PORT: zod_1.z.string().transform(Number).default('3001'),
-    SUPABASE_URL: zod_1.z.string(),
-    SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string(),
-    JWT_SECRET: zod_1.z.string().min(32),
+    SUPABASE_URL: zod_1.z.string().optional(),
+    SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string().optional(),
+    JWT_SECRET: zod_1.z.string().min(32).optional(),
     SMTP_HOST: zod_1.z.string().optional(),
     SMTP_PORT: zod_1.z.string().transform(Number).optional(),
     SMTP_USER: zod_1.z.string().optional(),

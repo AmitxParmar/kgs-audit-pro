@@ -5,8 +5,11 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "tsx watch src/app.ts",
+    "uat": "NODE_ENV=uat tsx watch src/app.ts",
     "build": "tsc",
+    "build:uat": "NODE_ENV=uat tsc",
     "start": "node dist/app.js",
+    "start:uat": "NODE_ENV=uat node dist/app.js",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
     "test": "jest",

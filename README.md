@@ -97,12 +97,13 @@ cp .env.example .env
 
 ### Environment Variables
 
+#### Development Environment
 Create a `.env` file in the root directory with the following variables:
 
 ```bash
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=http://localhost:54321
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Server Configuration
@@ -122,8 +123,34 @@ SMTP_PASS=your_smtp_password
 MAX_FILE_SIZE=10485760
 ALLOWED_FILE_TYPES=pdf,doc,docx,xls,xlsx,png,jpg,jpeg
 
-# CORS Configuration (optional)
+# CORS Configuration
 ALLOWED_ORIGINS=http://localhost:3000
+```
+
+#### UAT Environment
+Create UAT environment files for testing:
+
+**Client UAT (.env.uat):**
+```bash
+VITE_SUPABASE_URL=https://your-uat-supabase-url.supabase.co
+VITE_SUPABASE_ANON_KEY=your-uat-supabase-anon-key
+VITE_API_URL=https://your-uat-api-url.com
+```
+
+**Server UAT (.env.uat):**
+```bash
+NODE_ENV=uat
+PORT=3002
+SUPABASE_URL=https://your-uat-supabase-url.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-uat-supabase-service-role-key
+JWT_SECRET=your-uat-jwt-secret-key-minimum-32-characters
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-uat-email@gmail.com
+SMTP_PASS=your-uat-app-password
+MAX_FILE_SIZE=10485760
+ALLOWED_FILE_TYPES=pdf,doc,docx,xls,xlsx,png,jpg,jpeg
+ALLOWED_ORIGINS=https://your-uat-frontend-url.com
 ```
 
 ### Development
@@ -133,15 +160,101 @@ Start all applications in development mode:
 npm run dev
 ```
 
+**Development URLs:**
 - **Client**: http://localhost:3000
 - **Server**: http://localhost:3001
 - **Health Check**: http://localhost:3001/health
 
+### UAT Environment
+
+Start all applications in UAT mode:
+```bash
+npm run uat
+```
+
+**UAT URLs:**
+- **Client**: http://localhost:3000 (UAT mode)
+- **Server**: http://localhost:3002 (UAT mode)
+- **Health Check**: http://localhost:3002/health
+
+### Individual Services
+
+You can also start individual services:
+
+#### Development
+```bash
+# Client only
+npm run dev:client
+
+# Server only
+npm run dev:server
+```
+
+#### UAT
+```bash
+# Client only (UAT mode)
+npm run uat:client
+
+# Server only (UAT mode)
+npm run uat:server
+```
+
 ### Building
 
-Build all applications:
+#### Production Build
+Build all applications for production:
 ```bash
 npm run build
+```
+
+#### UAT Build
+Build all applications for UAT:
+```bash
+npm run build:uat
+```
+
+#### Individual Builds
+```bash
+# Client production build
+npm run build:client
+
+# Client UAT build
+npm run build:uat
+
+# Server production build
+npm run build:server
+
+# Server UAT build
+npm run build:uat
+```
+
+### Production Start
+
+#### Development Production
+Start production servers with development build:
+```bash
+npm run start
+```
+
+#### UAT Production
+Start production servers with UAT build:
+```bash
+npm run start:uat
+```
+
+#### Individual Production Starts
+```bash
+# Client only
+npm run start:client
+
+# Server only
+npm run start:server
+
+# Client UAT only
+npm run start:uat
+
+# Server UAT only
+npm run start:uat
 ```
 
 ### Testing
@@ -154,14 +267,59 @@ npm run test
 ### Linting & Type Checking
 
 ```bash
-# Run linting
+# Run linting (all packages)
 npm run lint
 
-# Run type checking
+# Run type checking (all packages)
 npm run type-check
 
 # Clean build artifacts
 npm run clean
+```
+
+## 🚀 Command Reference
+
+| Environment | Command | Purpose | Ports |
+|------------|----------|---------|--------|
+| **Development** | `npm run dev` | Start both services | 3000/3001 |
+| **Development** | `npm run dev:client` | Client only | 3000 |
+| **Development** | `npm run dev:server` | Server only | 3001 |
+| **UAT** | `npm run uat` | Start both UAT services | 3000/3002 |
+| **UAT** | `npm run uat:client` | Client UAT only | 3000 |
+| **UAT** | `npm run uat:server` | Server UAT only | 3002 |
+| **Production** | `npm run build` | Build for production | N/A |
+| **UAT** | `npm run build:uat` | Build for UAT | N/A |
+| **Production** | `npm run start` | Start production | N/A |
+| **UAT** | `npm run start:uat` | Start UAT production | N/A |
+
+### Environment Files
+
+| Environment | Client File | Server File | Description |
+|------------|--------------|-------------|-------------|
+| Development | `apps/client/.env` | `apps/server/.env` | Local development |
+| UAT | `apps/client/.env.uat` | `apps/server/.env.uat` | User acceptance testing |
+
+### Quick Start Guide
+
+#### 1. Development Setup
+```bash
+cd kgs-audit-pro
+npm install
+npm run dev
+```
+
+#### 2. UAT Setup
+```bash
+cd kgs-audit-pro
+# Configure .env.uat files
+npm run uat
+```
+
+#### 3. Production Deployment
+```bash
+cd kgs-audit-pro
+npm run build
+npm run start
 ```
 
 ## 📊 Features
@@ -243,3 +401,13 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support and questions, please contact the development team or create an issue in the repository.
+npm run dev	Development (both)	3000/3001
+npm run uat	UAT (both)	3000/3002
+npm run build	Production build	N/A
+npm run build:uat	UAT build	N/A
+npm run start	Production start	N/A
+npm run start:uat	UAT production start	N/A
+npm run dev:client	Client only	3000
+npm run dev:server	Server only	3001
+npm run uat:client	Client UAT only	3000
+npm run uat:server	Server UAT only	3002

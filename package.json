@@ -8,10 +8,19 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:client": "turbo run dev --filter=@kgs-audit-pro/client",
+    "dev:server": "turbo run dev --filter=@kgs-audit-pro/server",
+    "uat": "turbo run uat",
+    "uat:client": "turbo run uat --filter=@kgs-audit-pro/client",
+    "uat:server": "turbo run uat --filter=@kgs-audit-pro/server",
+    "start": "turbo run start",
+    "start:client": "turbo run start --filter=@kgs-audit-pro/client",
+    "start:server": "turbo run start --filter=@kgs-audit-pro/server",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "deploy": "turbo run deploy"
   },
   "devDependencies": {
     "turbo": "^1.10.16",
