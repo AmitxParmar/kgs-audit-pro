@@ -84,6 +84,16 @@ export const authService = {
     return user
   },
 
+  getSession: async (): Promise<AuthUser | null> => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return null
+  return {
+    id:    session.user.id,
+    email: session.user.email!,
+    name:  session.user.user_metadata?.name,
+  }
+},
+
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
     return supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
