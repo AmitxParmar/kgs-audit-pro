@@ -22,52 +22,58 @@ export function AuthForm() {
   } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSuccessMessage('')
+  e.preventDefault()
+  setSuccessMessage('')
 
+  if (mode === 'login') {
     try {
-      switch (mode) {
-        case 'login': {
-  await login({ email: formData.email, password: formData.password })
-  // Don't wait for user state — token is set, just navigate
-  window.location.href = '/'   // ← hard redirect, bypasses React Router state
-  break
-}
+      await login({ email: formData.email, password: formData.password })
+    } catch (err) {
+      console.error('login error:', err)
+    } finally {
+      // Token is in localStorage regardless — just go
+      window.location.href = '/'
+    }
+    return
+  }
 
-        case 'signup': {
-          const data = await signup({
-            email:           formData.email,
-            password:        formData.password,
-            confirmPassword: formData.confirmPassword,
-            name:            formData.name,
-          })
-          if (data?.session) {
-            // Email confirmation OFF — logged in immediately
-            navigate('/', { replace: true })
-          } else if (data?.user) {
-            // Email confirmation ON — show message
-            setSuccessMessage('✉ Check your email to confirm your account.')
-            setMode('login')
-          }
-          break
-        }
+  if (mode === 'signup') {
+    try {
+      await signup({
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        name: formData.name,
+      })
+    } catch (err) {
+      console.error('signup error:', err)
+    } finally {
+      window.location.href = '/'
+    }
+    return
+  }
 
-        case 'forgot-password':
-          await resetPassword(formData.email)
-          setSuccessMessage('✉ Password reset link sent — check your email.')
-          setMode('login')
-          break
+  if (mode === 'forgot-password') {
+    try {
+      await resetPassword(formData.email)
+      setSuccessMessage('✉ Password reset link sent — check your email.')
+      setMode('login')
+    } catch (err) {
+      console.error(err)
+    }
+    return
+  }
 
-        case 'reset-password':
-          await updatePassword(formData.password)
-          setSuccessMessage('✓ Password updated. Please sign in.')
-          setMode('login')
-          break
-      }
-    } catch {
-      // loginError / signupError etc. are surfaced from the hook
+  if (mode === 'reset-password') {
+    try {
+      await updatePassword(formData.password)
+      setSuccessMessage('✓ Password updated. Please sign in.')
+      setMode('login')
+    } catch (err) {
+      console.error(err)
     }
   }
+}
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
