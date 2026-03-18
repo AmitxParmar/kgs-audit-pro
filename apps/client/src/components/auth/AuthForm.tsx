@@ -1,11 +1,14 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom' 
 import { useAuth } from '../../hooks/useAuth'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
+
 
 type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password'
 
 export function AuthForm() {
   const [mode, setMode] = useState<AuthMode>('login')
+  const navigate = useNavigate() 
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -36,6 +39,7 @@ export function AuthForm() {
       switch (mode) {
         case 'login':
           await login({ email: formData.email, password: formData.password })
+          navigate('/', { replace: true }) 
           break
         case 'signup':
           await signup({
@@ -44,6 +48,7 @@ export function AuthForm() {
             confirmPassword: formData.confirmPassword,
             name: formData.name,
           })
+          navigate('/', { replace: true })
           break
         case 'forgot-password':
           await resetPassword(formData.email)
