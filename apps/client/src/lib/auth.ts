@@ -92,23 +92,22 @@ export const authService = {
     return user
   },
 
-  getSession: async (): Promise<AuthUser | null> => {
+ getSession: async (): Promise<AuthUser | null> => {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return null
 
-  // Fetch role from users table
+  // ← Query YOUR users table, not just the JWT
   const { data: profile } = await supabase
     .from('users')
-    .select('role, cb_id')
+    .select('role, cb_id, full_name')
     .eq('id', session.user.id)
     .single()
 
   return {
     id:    session.user.id,
     email: session.user.email!,
-    name:  session.user.user_metadata?.name,
-    user_role:  profile?.role,
-    role:  profile?.role, // Keep for backward compatibility
+    name:  profile?.full_name ?? session.user.user_metadata?.name,
+    role:  profile?.role,        // ← your app role from users table
     cb_id: profile?.cb_id,
   }
 },
@@ -117,18 +116,18 @@ export const authService = {
   return supabase.auth.onAuthStateChange(async (_event, session) => {
     if (!session?.user) { callback(null); return }
 
+    // ← Same — query users table, not JWT
     const { data: profile } = await supabase
       .from('users')
-      .select('role, cb_id')
+      .select('role, cb_id, full_name')
       .eq('id', session.user.id)
       .single()
 
     callback({
       id:    session.user.id,
       email: session.user.email!,
-      name:  session.user.user_metadata?.name,
+      name:  profile?.full_name ?? session.user.user_metadata?.name,
       role:  profile?.role,
-      user_role: profile?.role,
       cb_id: profile?.cb_id,
     })
   })
