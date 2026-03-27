@@ -1,40 +1,57 @@
-// apps/client/src/App.tsx
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AppShell }      from './components/layout/AppShell'
-import { Dashboard }     from './pages/dashboards/Dashboard'
-import { Login }         from './pages/Login'
-import { ResetPassword } from './pages/ResetPassword'
-import { ProtectedRoute, RoleRoute } from './components/auth/AuthProvider'
-import { AdminRoutes } from './pages/admin/AdminRoutes'
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AppShell } from "./components/layout/AppShell";
+import { Dashboard } from "./pages/dashboards/Dashboard";
+import { Login } from "./pages/Login";
+import { ResetPassword } from "./pages/ResetPassword";
+import { ProtectedRoute, RoleRoute } from "./components/auth/AuthProvider";
+import { AdminRoutes } from "./pages/admin/AdminRoutes";
+
+
+import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
+import IafSchedule from "./pages/audit-schedule/IafSchedule";
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
       <Routes>
-        <Route path="/login"          element={<Login />} />
+        {/* Auth pages */}
+        <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <AppShell>
-              <Routes>
-                {/* Single dashboard route — role routing happens inside Dashboard.tsx */}
-                <Route path="/"         element={<Dashboard />} />
 
-                {/* Role-gated routes */}
-                <Route path="/admin/*"  element={
-                  <RoleRoute allowedRoles={['super_admin', 'cb_admin']}>
-                    <AdminRoutes />
-                  </RoleRoute>
-                }/>
+        {/* ✅ PUBLIC routes (no ProtectedRoute) */}
+        <Route path="/audit-schedule" element={<AuditSchedule />} />
+        <Route path="/iaf-schedule" element={<IafSchedule />} />
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AppShell>
-          </ProtectedRoute>
-        }/>
+        {/* Protected app  */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Routes>
+                  {/* Dashboard (protected) */}
+                  <Route path="/" element={<Dashboard />} />
+
+                  {/* Admin (protected + role gated) */}
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
+                        <AdminRoutes />
+                      </RoleRoute>
+                    }
+                  />
+
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
