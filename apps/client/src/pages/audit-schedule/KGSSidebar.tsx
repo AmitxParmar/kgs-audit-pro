@@ -1,10 +1,16 @@
-import React from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+
+type KgsSidebarProps = {
+  sidebarCollapsed: boolean;
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: Dispatch<SetStateAction<boolean>>;
+};
 
 export default function KgsSidebar({
   sidebarCollapsed,
   mobileSidebarOpen,
   setMobileSidebarOpen,
-}) {
+}: KgsSidebarProps) {
   return (
     <>
       {/* Mobile overlay */}
@@ -32,9 +38,7 @@ export default function KgsSidebar({
         <div className="px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-slate-900/80 border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] grid place-items-center">
-              <span className="text-[12px] font-extrabold tracking-wide text-slate-100">
-                KGS
-              </span>
+              <span className="text-[12px] font-extrabold tracking-wide text-slate-100">KGS</span>
             </div>
 
             {!sidebarCollapsed && (
@@ -66,12 +70,8 @@ export default function KgsSidebar({
         {!sidebarCollapsed && (
           <div className="px-4 pb-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <div className="text-xs font-extrabold text-slate-200/90">
-                Audit Framework
-              </div>
-              <div className="text-[11px] text-slate-400 mt-1">
-                All rights reserved by KGS
-              </div>
+              <div className="text-xs font-extrabold text-slate-200/90">Audit Framework</div>
+              <div className="text-[11px] text-slate-400 mt-1">All rights reserved by KGS</div>
             </div>
           </div>
         )}
@@ -82,7 +82,15 @@ export default function KgsSidebar({
 
 /* ------------------------- Sidebar internal components ------------------------- */
 
-function SectionTitle({ children, collapsed, className = "" }) {
+function SectionTitle({
+  children,
+  collapsed,
+  className = "",
+}: {
+  children: ReactNode;
+  collapsed: boolean;
+  className?: string;
+}) {
   if (collapsed) return <div className="h-3" />;
   return (
     <div
@@ -93,7 +101,15 @@ function SectionTitle({ children, collapsed, className = "" }) {
   );
 }
 
-function NavItem({ label, active, collapsed }) {
+function NavItem({
+  label,
+  active = false,
+  collapsed,
+}: {
+  label: string;
+  active?: boolean;
+  collapsed: boolean;
+}) {
   const Icon = sidebarIconFor(label);
 
   return (
@@ -107,22 +123,12 @@ function NavItem({ label, active, collapsed }) {
     >
       {active && <span className="absolute left-0 top-0 h-full w-[3px] bg-blue-500 rounded-r" />}
 
-      <span
-        className={[
-          "w-6 grid place-items-center",
-          active ? "text-slate-100" : "text-slate-400",
-        ].join(" ")}
-      >
+      <span className={["w-6 grid place-items-center", active ? "text-slate-100" : "text-slate-400"].join(" ")}>
         <Icon className="h-[18px] w-[18px]" />
       </span>
 
       {!collapsed && (
-        <span
-          className={[
-            "text-sm",
-            active ? "font-extrabold text-slate-100" : "text-slate-300/85",
-          ].join(" ")}
-        >
+        <span className={["text-sm", active ? "font-extrabold text-slate-100" : "text-slate-300/85"].join(" ")}>
           {label}
         </span>
       )}
@@ -132,7 +138,9 @@ function NavItem({ label, active, collapsed }) {
 
 /* ------------------------------ Icons (SVG) ------------------------------ */
 
-function sidebarIconFor(label) {
+type IconComponent = (props: { className?: string }) => JSX.Element;
+
+function sidebarIconFor(label: string): IconComponent {
   switch (label) {
     case "Dashboard":
       return IconDashboard;
@@ -151,7 +159,7 @@ function sidebarIconFor(label) {
   }
 }
 
-function IconDashboard({ className = "" }) {
+function IconDashboard({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -163,7 +171,7 @@ function IconDashboard({ className = "" }) {
   );
 }
 
-function IconClientOnboarding({ className = "" }) {
+function IconClientOnboarding({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -188,7 +196,7 @@ function IconClientOnboarding({ className = "" }) {
   );
 }
 
-function IconAuditor({ className = "" }) {
+function IconAuditor({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -206,7 +214,7 @@ function IconAuditor({ className = "" }) {
   );
 }
 
-function IconList({ className = "" }) {
+function IconList({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -225,7 +233,7 @@ function IconList({ className = "" }) {
   );
 }
 
-function IconDoc({ className = "" }) {
+function IconDoc({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -245,7 +253,7 @@ function IconDoc({ className = "" }) {
   );
 }
 
-function IconStar({ className = "" }) {
+function IconStar({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -258,7 +266,7 @@ function IconStar({ className = "" }) {
   );
 }
 
-function IconDot({ className = "" }) {
+function IconDot({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="2.5" fill="currentColor" />

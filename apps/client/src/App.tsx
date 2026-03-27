@@ -8,7 +8,7 @@ import { AdminRoutes } from "./pages/admin/AdminRoutes";
 
 
 import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
-import IafSchedule from "./pages/audit-schedule/IafSchedule";
+import IafSchedule from "./pages/audit-schedule/IAFSchedule";
 
 function App() {
   return (
