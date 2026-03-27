@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import KgsSidebar from "./KGSSidebar";
+import KgsSidebar from "./KgsSidebar";
+
 
 type CollapsedSections = {
   details: boolean;
@@ -399,10 +400,7 @@ export default function AuditSchedule() {
               <div className="hidden lg:block" />
 
               <Field label="Standard / version">
-                <Input
-                  value={form.standardVersion}
-                  onChange={(v) => updateForm("standardVersion", v)}
-                />
+                <Input value={form.standardVersion} onChange={(v) => updateForm("standardVersion", v)} />
               </Field>
 
               <Field label="Certification body">
@@ -686,12 +684,7 @@ function Card(props: {
           title="Toggle"
           type="button"
         >
-          <span
-            className={[
-              "inline-block transition-transform",
-              collapsed ? "-rotate-90" : "rotate-0",
-            ].join(" ")}
-          >
+          <span className={["inline-block transition-transform", collapsed ? "-rotate-90" : "rotate-0"].join(" ")}>
             ▾
           </span>
         </button>
@@ -699,6 +692,19 @@ function Card(props: {
 
       {!collapsed && <div className="p-4">{children}</div>}
     </div>
+  );
+}
+
+function Pill({ children, active }: { children: React.ReactNode; active?: boolean }) {
+  return (
+    <span
+      className={[
+        "text-xs px-3 py-1.5 rounded-full border font-bold",
+        active ? "border-blue-500/30 bg-blue-500/15 text-slate-100" : "border-white/10 bg-white/5 text-slate-300/90",
+      ].join(" ")}
+    >
+      {children}
+    </span>
   );
 }
 

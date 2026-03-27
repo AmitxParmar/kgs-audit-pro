@@ -19,6 +19,7 @@ function App() {
 
         <Toaster position="top-center" reverseOrder={false} />
       <Routes>
+<<<<<<< HEAD
       
 
         {/* Public */}
@@ -57,6 +58,43 @@ function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
+=======
+        {/* Auth pages */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* ✅ PUBLIC routes (no ProtectedRoute) */}
+        <Route path="/audit-schedule" element={<AuditSchedule />} />
+        <Route path="/iaf-schedule" element={<IafSchedule />} />
+
+        {/* Protected app  */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Routes>
+                  {/* Dashboard (protected) */}
+                  <Route path="/" element={<Dashboard />} />
+
+                  {/* Admin (protected + role gated) */}
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
+                        <AdminRoutes />
+                      </RoleRoute>
+                    }
+                  />
+
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+>>>>>>> d440002f (UI OF IATF AND IAF)
       </Routes>
     </div>
   );
