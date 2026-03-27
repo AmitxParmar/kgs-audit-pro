@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import { useAuth } from '../../hooks/useAuth'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 
@@ -13,7 +13,7 @@ export function AuthForm() {
     email: '', password: '', confirmPassword: '', name: '',
   })
 
-  const navigate = useNavigate()
+  
 
   const {
     login, signup, resetPassword, updatePassword,

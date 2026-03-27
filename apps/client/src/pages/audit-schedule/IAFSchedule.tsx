@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import KgsSidebar from "./KgsSidebar";
+import KgsSidebar from "./KGSSidebar";
 
 /**
  * IAF MD4 schedule page (separate file).

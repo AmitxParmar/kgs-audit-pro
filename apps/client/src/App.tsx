@@ -8,6 +8,10 @@ import { AdminRoutes } from "./pages/admin/AdminRoutes";
 import { ClientsPage } from "./pages/clients/ClientsPage";
 import  ClientOnboarding  from "./pages/clients/ClientOnboarding";
 
+
+import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
+import IafSchedule from "./pages/audit-schedule/IAFSchedule";
+
 function App() {
   return (
     <div className="min-h-screen bg-background">
