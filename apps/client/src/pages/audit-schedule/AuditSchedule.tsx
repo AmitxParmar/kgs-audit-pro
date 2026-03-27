@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+<<<<<<< k-branch
 import KgsSidebar from "./KGSSidebar";
+=======
+import KgsSidebar from "./KgsSidebar";
+import IafSchedule from "./pages/audit-schedule/iafSchedule"; // if file is lowercase
+>>>>>>> main
 
 type CollapsedSections = {
   details: boolean;
