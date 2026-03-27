@@ -13,7 +13,6 @@ export function AuthForm() {
   const [formData, setFormData]       = useState({
     email: '', password: '', confirmPassword: '', name: '',
   })
-const navigate = useNavigate()
   
 
   const {
