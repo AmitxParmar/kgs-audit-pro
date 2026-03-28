@@ -9,38 +9,41 @@ export function useAuth() {
   const [user, setUser]           = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setIsLoading(false), 5000)
+useEffect(() => {
+  let mounted = true
 
-    // 1. Check if there's an existing session on page load
-    authService.getSession()
-      .then((sessionUser) => {
-        setUser(sessionUser)
-        queryClient.setQueryData(['auth', 'user'], sessionUser)
-      })
-      .catch(console.error)
-      .finally(() => {
-        setIsLoading(false)
-        clearTimeout(timeout)
-      })
+  const initAuth = async () => {
+    try {
+      const sessionUser = await authService.getSession()
 
-    // 2. Listen for login/logout changes
-    const { data: { subscription } } = authService.onAuthStateChange((authUser) => {
-      setUser(authUser)
-      setIsLoading(false)
-      queryClient.setQueryData(['auth', 'user'], authUser)
-      
-      // Auto-navigate to dashboard on successful login
-      if (authUser && window.location.pathname === '/login') {
-        navigate('/', { replace: true })
-      }
-    })
+      if (!mounted) return
 
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
+      setUser(sessionUser)
+      queryClient.setQueryData(['auth', 'user'], sessionUser)
+    } catch (err) {
+      console.error('Auth init error:', err)
+    } finally {
+      if (mounted) setIsLoading(false)
     }
-  }, [queryClient])
+  }
+
+  initAuth()
+
+  const { data } = authService.onAuthStateChange((authUser) => {
+    if (!mounted) return
+
+    setUser(authUser)
+    setIsLoading(false)
+    queryClient.setQueryData(['auth', 'user'], authUser)
+  })
+
+  const subscription = data.subscription
+
+  return () => {
+    mounted = false
+    subscription.unsubscribe()
+  }
+}, [queryClient])
 
   // ── Login ─────────────────────────────────────────────────────────────────
   // mutationFn returns the full Supabase data object so AuthForm can

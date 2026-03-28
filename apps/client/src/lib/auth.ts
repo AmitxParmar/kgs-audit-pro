@@ -92,23 +92,31 @@ export const authService = {
     return user
   },
 
- getSession: async (): Promise<AuthUser | null> => {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return null
+getSession: async (): Promise<AuthUser | null> => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
 
-  // ← Query YOUR users table, not just the JWT
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, cb_id, full_name')
-    .eq('id', session.user.id)
-    .single()
+    console.log("SESSION:", session)
+    console.log("SESSION ERROR:", error)
 
-  return {
-    id:    session.user.id,
-    email: session.user.email!,
-    name:  profile?.full_name ?? session.user.user_metadata?.name,
-    role:  profile?.role,        // ← your app role from users table
-    cb_id: profile?.cb_id,
+    if (!session?.user) return null
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role, cb_id, full_name')
+      .eq('id', session.user.id)
+      .maybeSingle()
+
+    return {
+      id: session.user.id,
+      email: session.user.email!,
+      name: profile?.full_name ?? session.user.user_metadata?.name,
+      role: profile?.role,
+      cb_id: profile?.cb_id,
+    }
+  } catch (err) {
+    console.error('getSession error:', err)
+    return null
   }
 },
 
@@ -121,7 +129,7 @@ export const authService = {
       .from('users')
       .select('role, cb_id, full_name')
       .eq('id', session.user.id)
-      .single()
+      .maybeSingle()
 
     callback({
       id:    session.user.id,

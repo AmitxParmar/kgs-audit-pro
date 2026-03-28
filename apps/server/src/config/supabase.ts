@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { env } from './env'
 
 const supabaseUrl = env.SUPABASE_URL || 'http://localhost:54321'
+console.log('👉 SUPABASE URL:', supabaseUrl)
 const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || 'development_key'
 
 export const supabase = createClient(
