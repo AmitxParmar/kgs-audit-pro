@@ -2,7 +2,7 @@
 import { useAuth } from '../../hooks/useAuth'
 import { SuperAdminDashboard }    from './SuperAdminDashboard'
 import { CbAdminDashboard }       from './CbAdminDashboard'
-import { LeadAuditorDashboard }   from './LeadAuditorDashboard'
+
 import { AuditorDashboard }       from './AuditorDashboard'
 import { StaffDashboard }         from './StaffDashboard'
 import { AccreditationDashboard } from './AccreditationDashboard'
