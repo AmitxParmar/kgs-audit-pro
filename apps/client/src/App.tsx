@@ -7,7 +7,7 @@ import { ProtectedRoute, RoleRoute } from "./components/auth/AuthProvider";
 import { AdminRoutes } from "./pages/admin/AdminRoutes";
 
 
-import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
+import AuditSchedule from "./pages/audit-schedule/IATFSchedule";
 import IafSchedule from "./pages/audit-schedule/IAFSchedule";
 
 function App() {

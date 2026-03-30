@@ -1,32 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KgsSidebar from "./KGSSidebar";
-import Document from "./Document";
+import Document, { type PanelTheme } from "./Document";
 import Notification from "./Notification";
 
 type CollapsedSections = { details: boolean; scope: boolean; team: boolean; checklist: boolean };
 
-type FormState = {
-  cab: string;
-  auditType: string;
-  accreditationBody: string;
-  plannedStart: string;
-  plannedEnd: string;
-  iafDocumentRef: string;
-  scopeOfAccreditation: string;
-
-  scopeDescription: string;
-  applicableDocs: string;
-  witnessRequirement: string;
-};
-
-type TeamTone = "amber" | "slate" | "teal";
+type TeamTone = "blue" | "teal" | "slate";
 
 type TeamMember = {
   name: string;
   role: string;
   qualification: string;
-  assignedArea: string;
+  assignedProcess: string;
   badgeTone: TeamTone;
 };
 
@@ -36,22 +22,36 @@ type ChecklistItem = {
   status: "Done" | "Required" | "Optional";
 };
 
-const steps = ["Audit Planning", "Desk Review", "On-site Audit", "Reporting"] as const;
+const steps = ["Audit Planning", "Audit Execution", "NC Management", "Reporting"] as const;
 type StepKey = (typeof steps)[number];
+
+type FormState = {
+  customer: string;
+  auditType: string;
+  site: string;
+  plannedStart: string;
+  plannedEnd: string;
+  standardVersion: string;
+  certificationBody: string;
+  scopeOfCertification: string;
+  csr: string;
+  excludedClauses: string;
+};
 
 type MemberDraft = {
   name: string;
   role: string;
   qualification: string;
-  assignedArea: string;
+  assignedProcess: string;
 };
 
 type MemberErrors = Partial<Record<keyof MemberDraft, string>>;
 
 type RightPanelTab = "documents" | "notifications";
 
-export default function IafSchedule() {
+export default function AuditSchedule() {
   const navigate = useNavigate();
+  const theme: PanelTheme = "audit";
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -64,62 +64,61 @@ export default function IafSchedule() {
     checklist: false,
   });
 
-  // Docked right panel
-  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  // Right panel (desktop docked + mobile overlay)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false); // ✅ closed by default
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
-  const notificationsCount = 4;
+  const notificationsCount = 0;
 
   const [form, setForm] = useState<FormState>({
-    cab: "Bravo Industries Cert. Body",
-    auditType: "Initial Accreditation",
-    accreditationBody: "KGS Accreditation Body",
-    plannedStart: "2026-04-12",
-    plannedEnd: "2026-04-14",
-    iafDocumentRef: "IAF MD4:2022",
-    scopeOfAccreditation: "Management System Certification",
-
-    scopeDescription: "Accreditation of management system certification bodies for ISO 9001 & ISO 14001",
-    applicableDocs: "IAF MD4, MD9, MD11",
-    witnessRequirement: "Yes — to be conducted during on-site phase",
+    customer: "Acme Motors Q2",
+    auditType: "Customer Audit",
+    site: "Test Site 1",
+    plannedStart: "2026-06-15",
+    plannedEnd: "2026-06-17",
+    standardVersion: "IATF 16949:2016",
+    certificationBody: "KGS Certification Pvt Ltd",
+    scopeOfCertification: "Design, manufacture and supply of automotive components for passenger vehicles",
+    csr: "BMW Group CSR",
+    excludedClauses: "",
   });
 
   const [team, setTeam] = useState<TeamMember[]>([
     {
-      name: "Sunita Rao",
-      role: "Lead Assessor",
-      qualification: "IAF Certified LA",
-      assignedArea: "All processes",
-      badgeTone: "amber",
+      name: "Rajesh Kumar",
+      role: "Lead Auditor",
+      qualification: "IATF Certified LA",
+      assignedProcess: "All processes",
+      badgeTone: "blue",
     },
     {
-      name: "Ravi Menon",
-      role: "Assessor",
-      qualification: "ISO 17021 LA",
-      assignedArea: "Certification process",
+      name: "Meena Pillai",
+      role: "Auditor",
+      qualification: "ISO 9001 LA",
+      assignedProcess: "Production, QMS",
       badgeTone: "slate",
     },
     {
-      name: "Priya Nair",
-      role: "Technical Assessor",
-      qualification: "MS Certification Exp.",
-      assignedArea: "Witness audit",
+      name: "Arjun Sharma",
+      role: "Technical Expert",
+      qualification: "Automotive Eng.",
+      assignedProcess: "Manufacturing process",
       badgeTone: "teal",
     },
   ]);
 
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { label: "CAB application received & reviewed", checked: true, status: "Done" },
-    { label: "Accreditation body appointment confirmed", checked: true, status: "Done" },
-    { label: "Audit notification sent to CAB", checked: false, status: "Required" },
-    { label: "IAF MD4 §5 documented procedures requested", checked: false, status: "Required" },
-    { label: "Competence records of CAB personnel obtained", checked: false, status: "Required" },
-    { label: "Witness audit client list provided by CAB", checked: false, status: "Optional" },
+    { label: "90-day advance notice sent to client", checked: true, status: "Done" },
+    { label: "Previous audit report reviewed", checked: true, status: "Done" },
+    { label: "CSR documents obtained", checked: true, status: "Done" },
+    { label: "Audit plan sent to auditee (30 days prior)", checked: false, status: "Required" },
+    { label: "QMS manual & procedures requested", checked: false, status: "Required" },
+    { label: "FMEA & control plan samples obtained", checked: false, status: "Optional" },
   ]);
 
   const [autoSavedAt, setAutoSavedAt] = useState<Date>(new Date());
 
   const breadcrumbs = useMemo(
-    () => ["Dashboard", "Audits", "IAF MD4", "Bravo Industries", "Audit Planning"],
+    () => ["Dashboard", "Audits", "IATF 16949", "Acme Motors Q2", "Audit Planning"],
     []
   );
 
@@ -140,8 +139,9 @@ export default function IafSchedule() {
       const item = next[idx];
       if (!item) return prev;
 
+      const wasDone = item.status === "Done";
       const checked = !item.checked;
-      const status: ChecklistItem["status"] = checked ? "Done" : item.status === "Done" ? "Required" : item.status;
+      const status: ChecklistItem["status"] = checked ? "Done" : wasDone ? "Required" : item.status;
 
       next[idx] = { ...item, checked, status };
       return next;
@@ -153,23 +153,17 @@ export default function IafSchedule() {
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [memberDraft, setMemberDraft] = useState<MemberDraft>({
     name: "",
-    role: "Assessor",
+    role: "Auditor",
     qualification: "",
-    assignedArea: "",
+    assignedProcess: "",
   });
   const [memberErrors, setMemberErrors] = useState<MemberErrors>({});
 
   const openAddMember = () => {
-    setMemberDraft({
-      name: "",
-      role: "Assessor",
-      qualification: "",
-      assignedArea: "",
-    });
+    setMemberDraft({ name: "", role: "Auditor", qualification: "", assignedProcess: "" });
     setMemberErrors({});
     setAddMemberOpen(true);
   };
-
   const closeAddMember = () => setAddMemberOpen(false);
 
   const saveMember = () => {
@@ -177,13 +171,13 @@ export default function IafSchedule() {
     if (!memberDraft.name.trim()) errs.name = "Name is required";
     if (!memberDraft.role.trim()) errs.role = "Role is required";
     if (!memberDraft.qualification.trim()) errs.qualification = "Qualification is required";
-    if (!memberDraft.assignedArea.trim()) errs.assignedArea = "Assigned area is required";
+    if (!memberDraft.assignedProcess.trim()) errs.assignedProcess = "Assigned process is required";
 
     setMemberErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
     const tone: TeamTone =
-      memberDraft.role === "Lead Assessor" ? "amber" : memberDraft.role === "Technical Assessor" ? "teal" : "slate";
+      memberDraft.role === "Lead Auditor" ? "blue" : memberDraft.role === "Technical Expert" ? "teal" : "slate";
 
     setTeam((p) => [
       ...p,
@@ -191,7 +185,7 @@ export default function IafSchedule() {
         name: memberDraft.name.trim(),
         role: memberDraft.role.trim(),
         qualification: memberDraft.qualification.trim(),
-        assignedArea: memberDraft.assignedArea.trim(),
+        assignedProcess: memberDraft.assignedProcess.trim(),
         badgeTone: tone,
       },
     ]);
@@ -199,28 +193,29 @@ export default function IafSchedule() {
     setAddMemberOpen(false);
   };
 
+  // Right panel controls
   const openDocs = () => {
     setRightPanelTab("documents");
     setRightPanelOpen(true);
   };
-
   const openNotifs = () => {
     setRightPanelTab("notifications");
     setRightPanelOpen(true);
   };
-
   const closeRightPanel = () => setRightPanelOpen(false);
+
+  const activeTabText = "text-blue-300";
+  const underlineCls = "bg-blue-500";
 
   const headerTab = (t: RightPanelTab, label: string, icon: string, badge?: number) => {
     const active = rightPanelTab === t;
-
     return (
       <button
         type="button"
         onClick={() => setRightPanelTab(t)}
         className={[
-          "h-12 px-5 rounded-2xl transition text-sm font-extrabold flex items-center gap-2",
-          active ? "text-amber-300" : "text-slate-500 hover:text-slate-300",
+          "h-12 px-4 rounded-2xl transition text-sm font-extrabold flex items-center gap-2",
+          active ? activeTabText : "text-slate-500 hover:text-slate-300",
         ].join(" ")}
       >
         <span className={active ? "opacity-100" : "opacity-80"}>{icon}</span>
@@ -236,7 +231,7 @@ export default function IafSchedule() {
 
   return (
     <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
-      {/* Force dark inputs even on focus/autofill (prevents white fields) */}
+      {/* Match image: darker base, softer input contrast */}
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
@@ -265,6 +260,7 @@ export default function IafSchedule() {
 
       {/* MAIN + RIGHT PANEL WRAPPER */}
       <div className="flex-1 min-w-0 flex overflow-hidden">
+        {/* Main */}
         <main className="flex-1 min-w-0 flex flex-col">
           {/* Topbar */}
           <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
@@ -278,6 +274,7 @@ export default function IafSchedule() {
                 ☰
               </button>
 
+              {/* ✅ Sidebar minimize button (like IAF) */}
               <button
                 className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
                 onClick={() => setSidebarCollapsed((v) => !v)}
@@ -300,91 +297,94 @@ export default function IafSchedule() {
 
             <div className="flex items-center gap-2">
               <button
-                className="h-9 px-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
+                className="h-9 px-4 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold text-slate-200/90"
                 type="button"
                 onClick={openDocs}
               >
-                <span className="mr-2">📄</span>Documents
+                <span className="mr-2 opacity-80">▦</span>Documents
               </button>
 
               <button
-                className="h-9 px-3 rounded-full border border-amber-500/30 bg-amber-500/15 hover:bg-amber-500/20 transition text-sm font-extrabold text-amber-100"
+                className="h-9 px-4 rounded-full border border-blue-500/30 bg-blue-500/15 hover:bg-blue-500/20 transition text-sm font-extrabold text-blue-100"
                 type="button"
                 onClick={openNotifs}
               >
-                <span className="mr-2">🔔</span>Alerts
-                {notificationsCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-rose-500/15 border border-rose-400/25 text-rose-200 text-xs font-black">
-                    {notificationsCount}
-                  </span>
-                )}
+                <span className="mr-2 opacity-90">🔔</span>Alerts
+                <span className="ml-2 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-rose-500/15 border border-rose-400/25 text-rose-200 text-xs font-black">
+                  {notificationsCount}
+                </span>
               </button>
 
               <div className="h-9 px-3 rounded-full border border-white/10 bg-white/5 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-rose-400" />
+                <span className="h-2 w-2 rounded-full bg-slate-500" />
                 <span className="font-extrabold text-sm">RK</span>
               </div>
             </div>
           </header>
 
-          {/* Context row */}
+          {/* Context row (switch) */}
           <section className="shrink-0 px-4 lg:px-5 py-3 border-b border-white/10 bg-black/10">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-slate-500">Standard:</span>
 
-              <button
-                type="button"
-                className="h-8 px-4 rounded-full text-xs font-extrabold border border-white/10 bg-black/20 text-slate-300/90 hover:bg-white/10 transition"
-                onClick={() => navigate("/audit-schedule")}
-                title="IATF 16949"
-              >
-                IATF 16949
-              </button>
-
-              <button
-                type="button"
-                className="h-8 px-4 rounded-full text-xs font-extrabold border border-amber-500/30 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20 transition"
-                onClick={() => navigate("/iaf-schedule")}
-                aria-current="page"
-                title="IAF MD4"
-              >
-                IAF MD4
-              </button>
+              <div className="inline-flex rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+                <button
+                  type="button"
+                  className="h-9 px-4 text-sm font-extrabold bg-blue-500/15 text-blue-200 border-r border-white/10"
+                  onClick={() => navigate("/audit-schedule")}
+                  aria-current="page"
+                >
+                  IATF 16949
+                </button>
+                <button
+                  type="button"
+                  className="h-9 px-4 text-sm font-extrabold text-slate-400 hover:bg-white/5"
+                  onClick={() => navigate("/iaf-schedule")}
+                >
+                  IAF MD4
+                </button>
+              </div>
 
               <span className="mx-1 h-4 w-px bg-white/10" />
               <span className="text-sm text-slate-400">
-                Bravo Industries <span className="text-slate-600">·</span> Initial Accreditation{" "}
-                <span className="text-slate-600">·</span> Lead: Sunita Rao
+                Acme Motors Q2 <span className="text-slate-600">·</span> Customer Audit{" "}
+                <span className="text-slate-600">·</span> Lead: Rajesh Kumar
               </span>
             </div>
           </section>
 
-          {/* Stepper */}
-          <section className="shrink-0 px-4 lg:px-5 pt-4 pb-2 border-b border-white/10 bg-black/10">
-            <div className="flex flex-wrap gap-3">
+          {/* ✅ Stepper with thin connector line like IAF */}
+          <section className="shrink-0 px-4 lg:px-5 pt-4 pb-3 border-b border-white/10 bg-black/10">
+            <div className="flex flex-wrap items-center gap-3">
               {steps.map((s, i) => {
                 const isActive = s === activeStep;
                 const isCompleted = steps.indexOf(activeStep) > i;
 
                 return (
-                  <button key={s} onClick={() => setActiveStep(s)} className="flex items-center gap-3" type="button">
-                    <span
-                      className={[
-                        "h-8 w-8 rounded-full grid place-items-center text-xs font-black border",
-                        isCompleted
-                          ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
-                          : isActive
-                            ? "border-amber-400/30 bg-amber-500/20 text-amber-200"
-                            : "border-white/10 bg-white/5 text-slate-500",
-                      ].join(" ")}
-                    >
-                      {isCompleted ? "✓" : i + 1}
-                    </span>
-                    <span className={["text-sm font-extrabold", isActive ? "text-slate-100" : "text-slate-500"].join(" ")}>
-                      {s}
-                    </span>
-                    {i < steps.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
-                  </button>
+                  <div key={s} className="flex items-center">
+                    <button onClick={() => setActiveStep(s)} className="flex items-center gap-3" type="button">
+                      <span
+                        className={[
+                          "h-8 w-8 rounded-full grid place-items-center text-xs font-black border",
+                          isCompleted
+                            ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+                            : isActive
+                              ? "border-blue-400/30 bg-blue-500/20 text-blue-200"
+                              : "border-white/10 bg-white/5 text-slate-500",
+                        ].join(" ")}
+                      >
+                        {isCompleted ? "✓" : i + 1}
+                      </span>
+
+                      <span
+                        className={["text-sm font-extrabold", isActive ? "text-slate-100" : "text-slate-500"].join(" ")}
+                      >
+                        {s}
+                      </span>
+                    </button>
+
+                    {i < steps.length - 1 && <span className="mx-4 h-px w-14 bg-white/10" />}
+                  </div>
                 );
               })}
             </div>
@@ -394,26 +394,27 @@ export default function IafSchedule() {
           <section className="flex-1 min-h-0 overflow-auto px-4 lg:px-5 pb-28 space-y-4 bg-gradient-to-b from-black/0 to-black/20">
             <Card
               title="Audit details"
-              subtitle="IAF MD4 accreditation identification"
+              subtitle="Core identification & classification"
               icon="📋"
               collapsed={collapsed.details}
               onToggle={() => setCollapsed((p) => ({ ...p, details: !p.details }))}
+              iconTone="slate"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Field label="Conformity Assessment Body (CAB)" required>
-                  <Input value={form.cab} onChange={(v) => updateForm("cab", v)} />
+                <Field label="Customer / auditee" required>
+                  <Input value={form.customer} onChange={(v) => updateForm("customer", v)} />
                 </Field>
 
                 <Field label="Audit type" required>
                   <Select
                     value={form.auditType}
                     onChange={(v) => updateForm("auditType", v)}
-                    options={["Initial Accreditation", "Surveillance", "Re-assessment", "Extension of scope"]}
+                    options={["Customer Audit", "Internal Audit", "Supplier Audit"]}
                   />
                 </Field>
 
-                <Field label="Accreditation body" required>
-                  <Input value={form.accreditationBody} onChange={(v) => updateForm("accreditationBody", v)} />
+                <Field label="Site / location" required>
+                  <Input value={form.site} onChange={(v) => updateForm("site", v)} />
                 </Field>
 
                 <Field label="Planned start date">
@@ -426,62 +427,67 @@ export default function IafSchedule() {
 
                 <div className="hidden lg:block" />
 
-                <Field label="IAF document reference">
-                  <Input value={form.iafDocumentRef} onChange={(v) => updateForm("iafDocumentRef", v)} />
+                <Field label="Standard / version">
+                  <Input value={form.standardVersion} onChange={(v) => updateForm("standardVersion", v)} />
                 </Field>
 
-                <Field label="Scope of accreditation">
-                  <Input value={form.scopeOfAccreditation} onChange={(v) => updateForm("scopeOfAccreditation", v)} />
+                <Field label="Certification body">
+                  <Input value={form.certificationBody} onChange={(v) => updateForm("certificationBody", v)} />
                 </Field>
               </div>
             </Card>
 
             <Card
-              title="Accreditation scope & criteria"
-              subtitle="IAF MD4 clause applicability"
+              title="Scope & criteria"
+              subtitle="IATF clause applicability & CSR"
               icon="🎯"
               collapsed={collapsed.scope}
               onToggle={() => setCollapsed((p) => ({ ...p, scope: !p.scope }))}
+              iconTone="slate"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Field label="Scope description">
-                  <TextArea value={form.scopeDescription} onChange={(v) => updateForm("scopeDescription", v)} rows={3} />
+                <Field label="Scope of certification">
+                  <TextArea
+                    value={form.scopeOfCertification}
+                    onChange={(v) => updateForm("scopeOfCertification", v)}
+                    rows={3}
+                  />
                 </Field>
 
-                <Field label="Applicable IAF MD documents">
+                <Field label="Customer Specific Requirements (CSR)">
                   <Select
-                    value={form.applicableDocs}
-                    onChange={(v) => updateForm("applicableDocs", v)}
-                    options={["IAF MD4, MD9, MD11", "IAF MD4 Only", "IAF MD4, MD5"]}
+                    value={form.csr}
+                    onChange={(v) => updateForm("csr", v)}
+                    options={["BMW Group CSR", "Ford CSR", "GM CSR", "VW Group CSR"]}
                   />
                 </Field>
 
                 <div className="lg:col-span-2">
-                  <Field label="Witness audit requirement (IAF MD4 §6)">
-                    <Select
-                      value={form.witnessRequirement}
-                      onChange={(v) => updateForm("witnessRequirement", v)}
-                      options={["Yes — to be conducted during on-site phase", "No — exemption applicable"]}
+                  <Field label="Excluded clauses (with justification)">
+                    <Input
+                      value={form.excludedClauses}
+                      onChange={(v) => updateForm("excludedClauses", v)}
+                      placeholder="e.g. 8.3 Design & Development — excluded (no design responsibility)"
                     />
                   </Field>
                 </div>
               </div>
             </Card>
 
-            {/* Keep these sections as-is (per your request) */}
             <Card
               title="Audit team"
-              subtitle="Lead assessor, team & technical assessors"
+              subtitle="Lead auditor, team & technical experts"
               icon="👥"
               collapsed={collapsed.team}
               onToggle={() => setCollapsed((p) => ({ ...p, team: !p.team }))}
+              iconTone="purple"
             >
               <div className="space-y-3">
                 <div className="grid grid-cols-4 gap-4 px-1 text-[11px] tracking-widest text-slate-500">
                   <div>NAME</div>
                   <div>ROLE</div>
                   <div>QUALIFICATION</div>
-                  <div>ASSIGNED AREA</div>
+                  <div>ASSIGNED PROCESS</div>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-black/10 overflow-hidden">
@@ -490,18 +496,18 @@ export default function IafSchedule() {
                       key={`${m.name}-${idx}`}
                       className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0"
                     >
-                      <div className="text-slate-200/90">{m.name}</div>
+                      <div className="text-slate-200/90 font-semibold">{m.name}</div>
                       <div>
                         <RoleBadge tone={m.badgeTone}>{m.role}</RoleBadge>
                       </div>
                       <div className="text-slate-300/80">{m.qualification}</div>
-                      <div className="text-slate-300/80">{m.assignedArea}</div>
+                      <div className="text-slate-300/80">{m.assignedProcess}</div>
                     </div>
                   ))}
                 </div>
 
                 <button
-                  className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
+                  className="h-10 px-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition text-sm font-semibold text-slate-300"
                   onClick={openAddMember}
                   type="button"
                 >
@@ -512,10 +518,11 @@ export default function IafSchedule() {
 
             <Card
               title="Pre-audit checklist"
-              subtitle="IAF MD4 planning requirements"
+              subtitle="Confirm readiness before execution"
               icon="✅"
               collapsed={collapsed.checklist}
               onToggle={() => setCollapsed((p) => ({ ...p, checklist: !p.checklist }))}
+              iconTone="green"
             >
               <div className="space-y-2">
                 {checklist.map((item, idx) => (
@@ -528,7 +535,7 @@ export default function IafSchedule() {
                         type="checkbox"
                         checked={item.checked}
                         onChange={() => toggleChecklist(idx)}
-                        className="h-4 w-4 rounded border-white/20 bg-black/30 text-amber-500 focus:ring-amber-500/20"
+                        className="h-4 w-4 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-blue-500/20"
                       />
                       <span
                         className={[
@@ -552,10 +559,7 @@ export default function IafSchedule() {
           <footer className="shrink-0 sticky bottom-0 border-t border-white/10 bg-black/30 backdrop-blur px-4 lg:px-5 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
-                <button
-                  className="h-10 px-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300"
-                  type="button"
-                >
+                <button className="h-10 px-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300" type="button">
                   ← Previous
                 </button>
 
@@ -567,31 +571,28 @@ export default function IafSchedule() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  className="h-10 px-6 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300"
-                  type="button"
-                >
+                <button className="h-10 px-6 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300" type="button">
                   Save draft
                 </button>
                 <button
-                  className="h-10 px-6 rounded-xl border border-amber-500/30 bg-[#F3A300] hover:brightness-110 transition font-extrabold text-black"
+                  className="h-10 px-6 rounded-xl border border-blue-500/30 bg-blue-500 hover:bg-blue-400 transition font-extrabold text-white shadow-[0_18px_45px_rgba(59,130,246,0.22)]"
                   type="button"
+                  onClick={() => setActiveStep("Audit Execution")}
                 >
-                  Save &amp; proceed to Desk Review →
+                  Save &amp; proceed to Audit Execution →
                 </button>
               </div>
             </div>
           </footer>
         </main>
 
-        {/* Docked Right Panel (reduced width) */}
+        {/* Desktop: docked right panel */}
         {rightPanelOpen && (
           <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 border-l border-white/10 bg-[#0B1220] overflow-hidden">
             <div className="flex-1 min-w-0 flex flex-col">
-              {/* tabs header */}
               <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-10">
+                  <div className="flex items-center gap-6">
                     {headerTab("documents", "Documents", "▦")}
                     {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
                   </div>
@@ -607,24 +608,63 @@ export default function IafSchedule() {
                   </button>
                 </div>
 
-                {/* underline indicator */}
                 <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
                   <div
                     className={[
-                      "h-full w-1/2 bg-[#F3A300] transition-transform duration-300",
+                      "h-full w-1/2 transition-transform duration-300",
+                      underlineCls,
                       rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
                     ].join(" ")}
                   />
                 </div>
               </div>
 
-              {/* scroll body */}
               <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
-                {rightPanelTab === "documents" ? <Document /> : <Notification />}
+                {rightPanelTab === "documents" ? <Document theme={theme} /> : <Notification theme={theme} />}
               </div>
             </div>
           </aside>
         )}
+
+        {/* Mobile: overlay drawer */}
+        <div className={["lg:hidden", rightPanelOpen ? "block" : "hidden"].join(" ")}>
+          <div className="fixed inset-0 z-[80] bg-black/60" onClick={closeRightPanel} />
+          <aside className="fixed top-0 right-0 z-[81] h-full w-[92vw] max-w-[520px] border-l border-white/10 bg-[#0B1220] shadow-[0_40px_120px_rgba(0,0,0,0.65)]">
+            <div className="flex h-full flex-col">
+              <div className="px-5 pt-5 pb-2 border-b border-white/10 bg-black/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {headerTab("documents", "Documents", "▦")}
+                    {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
+                  </div>
+
+                  <button
+                    className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
+                    onClick={closeRightPanel}
+                    aria-label="Close panel"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={[
+                      "h-full w-1/2 transition-transform duration-300",
+                      underlineCls,
+                      rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
+                    ].join(" ")}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto px-5 py-5">
+                {rightPanelTab === "documents" ? <Document theme={theme} /> : <Notification theme={theme} />}
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
       {/* Add team member modal */}
@@ -657,16 +697,22 @@ export default function IafSchedule() {
                   <Select
                     value={memberDraft.role}
                     onChange={(v) => setMemberDraft((p) => ({ ...p, role: v }))}
-                    options={["Lead Assessor", "Assessor", "Technical Assessor"]}
+                    options={["Lead Auditor", "Auditor", "Technical Expert"]}
                   />
                 </ModalField>
 
                 <ModalField label="Qualification" error={memberErrors.qualification}>
-                  <Input value={memberDraft.qualification} onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))} />
+                  <Input
+                    value={memberDraft.qualification}
+                    onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))}
+                  />
                 </ModalField>
 
-                <ModalField label="Assigned area" error={memberErrors.assignedArea}>
-                  <Input value={memberDraft.assignedArea} onChange={(v) => setMemberDraft((p) => ({ ...p, assignedArea: v }))} />
+                <ModalField label="Assigned process" error={memberErrors.assignedProcess}>
+                  <Input
+                    value={memberDraft.assignedProcess}
+                    onChange={(v) => setMemberDraft((p) => ({ ...p, assignedProcess: v }))}
+                  />
                 </ModalField>
               </div>
 
@@ -679,7 +725,7 @@ export default function IafSchedule() {
                   Cancel
                 </button>
                 <button
-                  className="h-10 px-4 rounded-xl border border-amber-500/30 bg-amber-500/20 hover:bg-amber-500/25 transition font-extrabold text-amber-100"
+                  className="h-10 px-4 rounded-xl border border-blue-500/30 bg-blue-600/20 hover:bg-blue-600/25 transition font-extrabold text-blue-100"
                   onClick={saveMember}
                   type="button"
                 >
@@ -694,7 +740,7 @@ export default function IafSchedule() {
   );
 }
 
-/* ------------------------------ Reusable UI (same as earlier) ------------------------------ */
+/* ------------------------------ Reusable UI ------------------------------ */
 
 function Card(props: {
   title: string;
@@ -702,16 +748,23 @@ function Card(props: {
   icon?: string;
   collapsed?: boolean;
   onToggle?: () => void;
+  iconTone?: "slate" | "purple" | "green";
   children: React.ReactNode;
 }) {
-  const { title, subtitle, icon, collapsed, onToggle, children } = props;
+  const { title, subtitle, icon, collapsed, onToggle, children, iconTone } = props;
+
+  const iconCls =
+    iconTone === "purple"
+      ? "bg-purple-500/15 border-purple-500/25"
+      : iconTone === "green"
+        ? "bg-emerald-400/10 border-emerald-400/25"
+        : "bg-white/5 border-white/10";
+
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden">
       <div className="px-5 py-4 flex items-center justify-between border-b border-white/10 bg-black/10">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="h-11 w-11 rounded-2xl grid place-items-center border border-white/10 bg-[#2A1C14]">
-            {icon ?? "▢"}
-          </div>
+          <div className={`h-11 w-11 rounded-2xl grid place-items-center border ${iconCls}`}>{icon ?? "▢"}</div>
           <div className="min-w-0">
             <div className="font-extrabold text-[16px] truncate text-slate-100">{title}</div>
             {subtitle && <div className="text-sm text-slate-500 truncate">{subtitle}</div>}
@@ -772,7 +825,7 @@ function Input(props: {
       type={type ?? "text"}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
+      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 placeholder:text-slate-600 outline-none focus:border-blue-500/30 focus:ring-2 focus:ring-blue-500/10"
     />
   );
 }
@@ -784,7 +837,7 @@ function TextArea(props: { value: string; onChange: (v: string) => void; rows?: 
       value={value}
       rows={rows ?? 4}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10 resize-y"
+      className="kgs-field w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-100 placeholder:text-slate-600 outline-none focus:border-blue-500/30 focus:ring-2 focus:ring-blue-500/10 resize-y"
     />
   );
 }
@@ -795,7 +848,7 @@ function Select(props: { value: string; onChange: (v: string) => void; options: 
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
+      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 outline-none focus:border-blue-500/30 focus:ring-2 focus:ring-blue-500/10"
     >
       {options.map((o) => (
         <option key={o} value={o} className="bg-slate-950">
@@ -806,10 +859,10 @@ function Select(props: { value: string; onChange: (v: string) => void; options: 
   );
 }
 
-function RoleBadge({ tone, children }: { tone: "amber" | "slate" | "teal"; children: React.ReactNode }) {
+function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNode }) {
   const toneCls =
-    tone === "amber"
-      ? "border-amber-500/30 bg-amber-500/15 text-amber-200"
+    tone === "blue"
+      ? "border-blue-500/30 bg-blue-500/15 text-blue-200"
       : tone === "teal"
         ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
         : "border-white/10 bg-white/5 text-slate-200/80";
@@ -817,7 +870,7 @@ function RoleBadge({ tone, children }: { tone: "amber" | "slate" | "teal"; child
   return <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>{children}</span>;
 }
 
-function StatusPill({ status }: { status: "Done" | "Required" | "Optional" }) {
+function StatusPill({ status }: { status: ChecklistItem["status"] }) {
   const cls =
     status === "Done"
       ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
