@@ -27,29 +27,29 @@ export function AuthForm() {
 
   try {
     switch (mode) {
-      case 'login': {
-        await login({ email: formData.email, password: formData.password })
-        // Navigation will happen automatically when user state updates
-        break
-      }
+    case 'login': {
+  await login({ email: formData.email, password: formData.password })
+  navigate('/')   
+  break
+}
 
       case 'signup': {
-        const data = await signup({
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-          name: formData.name,
-        })
-        if (data?.user) {
-          // Email confirmation OFF — logged in immediately
-          // Navigation will happen automatically when user state updates
-        } else {
-          // Email confirmation ON — show message
-          setSuccessMessage('✉ Check your email to confirm your account.')
-          setMode('login')
-        }
-        break
-      }
+  const data = await signup({
+    email: formData.email,
+    password: formData.password,
+    confirmPassword: formData.confirmPassword,
+    name: formData.name,
+  })
+
+  if (data?.user) {
+    
+    navigate('/')   
+  } else {
+    setSuccessMessage('✉ Check your email to confirm your account.')
+    setMode('login')
+  }
+  break
+}
 
       case 'forgot-password':
         await resetPassword(formData.email)
