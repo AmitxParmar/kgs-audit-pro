@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { useAuth } from '../../hooks/useAuth'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password'
 
@@ -12,7 +13,7 @@ export function AuthForm() {
   const [formData, setFormData]       = useState({
     email: '', password: '', confirmPassword: '', name: '',
   })
-
+const navigate = useNavigate()
   
 
   const {
