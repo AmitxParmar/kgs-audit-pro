@@ -1,13 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KgsSidebar from "./KGSSidebar";
-
-/**
- * IAF MD4 schedule page (separate file).
- * - Same shell + sidebar.
- * - Top "Standard" pills switch between IATF and IAF pages.
- * - UI kept dark and flat (no gradients).
- */
+import Document from "./Document";
+import Notification from "./Notification";
 
 type CollapsedSections = { details: boolean; scope: boolean; team: boolean; checklist: boolean };
 
@@ -53,11 +48,13 @@ type MemberDraft = {
 
 type MemberErrors = Partial<Record<keyof MemberDraft, string>>;
 
+type RightPanelTab = "documents" | "notifications";
+
 export default function IafSchedule() {
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState<CollapsedSections>({
@@ -67,8 +64,6 @@ export default function IafSchedule() {
     checklist: false,
   });
 
-<<<<<<< Updated upstream
-=======
   // Docked right panel
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
@@ -76,7 +71,6 @@ export default function IafSchedule() {
   // ✅ Dynamic unread notifications badge (replaces hardcoded 4)
   const [notificationsCount, setNotificationsCount] = useState(0);
 
->>>>>>> Stashed changes
   const [form, setForm] = useState<FormState>({
     cab: "Bravo Industries Cert. Body",
     auditType: "Initial Accreditation",
@@ -86,8 +80,7 @@ export default function IafSchedule() {
     iafDocumentRef: "IAF MD4:2022",
     scopeOfAccreditation: "Management System Certification",
 
-    scopeDescription:
-      "Accreditation of management system certification bodies for ISO 9001 & ISO 14001",
+    scopeDescription: "Accreditation of management system certification bodies for ISO 9001 & ISO 14001",
     applicableDocs: "IAF MD4, MD9, MD11",
     witnessRequirement: "Yes — to be conducted during on-site phase",
   });
@@ -208,17 +201,51 @@ export default function IafSchedule() {
     setAddMemberOpen(false);
   };
 
+  const openDocs = () => {
+    setRightPanelTab("documents");
+    setRightPanelOpen(true);
+  };
+
+  const openNotifs = () => {
+    setRightPanelTab("notifications");
+    setRightPanelOpen(true);
+  };
+
+  const closeRightPanel = () => setRightPanelOpen(false);
+
+  const headerTab = (t: RightPanelTab, label: string, icon: string, badge?: number) => {
+    const active = rightPanelTab === t;
+
+    return (
+      <button
+        type="button"
+        onClick={() => setRightPanelTab(t)}
+        className={[
+          "h-12 px-5 rounded-2xl transition text-sm font-extrabold flex items-center gap-2",
+          active ? "text-amber-300" : "text-slate-500 hover:text-slate-300",
+        ].join(" ")}
+      >
+        <span className={active ? "opacity-100" : "opacity-80"}>{icon}</span>
+        <span>{label}</span>
+        {typeof badge === "number" && badge > 0 && (
+          <span className="ml-1 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-rose-500/15 border border-rose-400/25 text-rose-200 text-xs font-black">
+            {badge}
+          </span>
+        )}
+      </button>
+    );
+  };
+
   return (
-    <div className="h-screen w-full bg-slate-950 text-slate-200 flex overflow-hidden">
+    <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
       {/* Force dark inputs even on focus/autofill (prevents white fields) */}
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
-          background-color: rgba(0,0,0,0.20) !important;
+          background-color: rgba(0,0,0,0.22) !important;
           caret-color: rgb(226 232 240) !important;
         }
         .kgs-field:focus {
-          color: rgb(226 232 240) !important;
           background-color: rgba(0,0,0,0.28) !important;
         }
         input.kgs-field:-webkit-autofill,
@@ -238,289 +265,123 @@ export default function IafSchedule() {
         setMobileSidebarOpen={setMobileSidebarOpen}
       />
 
-      <main className="flex-1 min-w-0 flex flex-col">
-        {/* Topbar */}
-        <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-slate-950/40 backdrop-blur">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
-              onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Open sidebar"
-              type="button"
-            >
-              ☰
-            </button>
-
-            <button
-              className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              aria-label="Toggle sidebar collapse"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              type="button"
-            >
-              {sidebarCollapsed ? "»" : "«"}
-            </button>
-
-            <div className="text-sm text-slate-300/90 truncate">
-              {breadcrumbs.map((b, idx) => (
-                <span key={b} className="whitespace-nowrap">
-                  {b}
-                  {idx < breadcrumbs.length - 1 && <span className="mx-2 text-slate-500">›</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm" type="button">
-              <span className="mr-2">📄</span>Documents
-            </button>
-            <button className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm" type="button">
-              <span className="mr-2">🔔</span>Alerts
-            </button>
-            <div className="h-9 px-3 rounded-full border border-white/10 bg-white/5 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-rose-400" />
-              <span className="font-bold text-sm">RK</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Context row */}
-        <section className="shrink-0 px-4 lg:px-5 py-3 border-b border-white/10 bg-slate-950/30">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-slate-400">Standard:</span>
-
-            <button
-              type="button"
-              className="h-8 px-3 rounded-full text-xs font-bold border border-white/10 bg-white/5 text-slate-300/90 hover:bg-white/10 transition"
-              onClick={() => navigate("/audit-schedule")}
-              title="IATF 16949"
-            >
-              IATF 16949
-            </button>
-
-            <button
-              type="button"
-              className="h-8 px-3 rounded-full text-xs font-bold border border-amber-500/30 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20 transition"
-              onClick={() => navigate("/iaf-schedule")}
-              aria-current="page"
-              title="IAF MD4"
-            >
-              IAF MD4
-            </button>
-
-            <span className="mx-1 h-4 w-px bg-white/15" />
-            <span className="text-sm text-slate-400">
-              Bravo Industries <span className="text-slate-600">›</span> Initial Accreditation{" "}
-              <span className="text-slate-600">›</span> Lead: Sunita Rao
-            </span>
-          </div>
-        </section>
-
-        {/* Stepper */}
-        <section className="shrink-0 px-4 lg:px-5 pt-4 pb-2">
-          <div className="flex flex-wrap gap-2">
-            {steps.map((s, i) => {
-              const isActive = s === activeStep;
-              const isCompleted = steps.indexOf(activeStep) > i;
-
-              return (
-                <button
-                  key={s}
-                  onClick={() => setActiveStep(s)}
-                  className={[
-                    "flex items-center gap-2 rounded-2xl border px-3 py-2 transition",
-                    isActive ? "border-amber-500/30 bg-amber-500/10" : "border-white/10 bg-white/5 hover:bg-white/10",
-                  ].join(" ")}
-                  type="button"
-                >
-                  <span
-                    className={[
-                      "h-7 w-7 rounded-full grid place-items-center text-xs font-black border",
-                      isCompleted
-                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                        : isActive
-                          ? "border-amber-400/35 bg-amber-500/15 text-amber-200"
-                          : "border-white/10 bg-white/5 text-slate-200",
-                    ].join(" ")}
-                  >
-                    {isCompleted ? "✓" : i + 1}
-                  </span>
-                  <span className="text-sm font-bold">{s}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Content */}
-        <section className="flex-1 min-h-0 overflow-auto px-4 lg:px-5 pb-28 space-y-4">
-          <Card
-            title="Audit details"
-            subtitle="IAF MD4 accreditation identification"
-            icon="📋"
-            collapsed={collapsed.details}
-            onToggle={() => setCollapsed((p) => ({ ...p, details: !p.details }))}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Field label="Conformity Assessment Body (CAB)" required>
-                <Input value={form.cab} onChange={(v) => updateForm("cab", v)} />
-              </Field>
-
-              <Field label="Audit type" required>
-                <Select
-                  value={form.auditType}
-                  onChange={(v) => updateForm("auditType", v)}
-                  options={["Initial Accreditation", "Surveillance", "Re-assessment", "Extension of scope"]}
-                />
-              </Field>
-
-              <Field label="Accreditation body" required>
-                <Input value={form.accreditationBody} onChange={(v) => updateForm("accreditationBody", v)} />
-              </Field>
-
-              <Field label="Planned start date">
-                <Input value={form.plannedStart} onChange={(v) => updateForm("plannedStart", v)} type="date" />
-              </Field>
-
-              <Field label="Planned end date">
-                <Input value={form.plannedEnd} onChange={(v) => updateForm("plannedEnd", v)} type="date" />
-              </Field>
-
-              <div className="hidden lg:block" />
-
-              <Field label="IAF document reference">
-                <Input value={form.iafDocumentRef} onChange={(v) => updateForm("iafDocumentRef", v)} />
-              </Field>
-
-              <Field label="Scope of accreditation">
-                <Input value={form.scopeOfAccreditation} onChange={(v) => updateForm("scopeOfAccreditation", v)} />
-              </Field>
-            </div>
-          </Card>
-
-          <Card
-            title="Accreditation scope & criteria"
-            subtitle="IAF MD4 clause applicability"
-            icon="🎯"
-            collapsed={collapsed.scope}
-            onToggle={() => setCollapsed((p) => ({ ...p, scope: !p.scope }))}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Field label="Scope description">
-                <TextArea value={form.scopeDescription} onChange={(v) => updateForm("scopeDescription", v)} rows={3} />
-              </Field>
-
-              <Field label="Applicable IAF MD documents">
-                <Select
-                  value={form.applicableDocs}
-                  onChange={(v) => updateForm("applicableDocs", v)}
-                  options={["IAF MD4, MD9, MD11", "IAF MD4 Only", "IAF MD4, MD5", ]}
-                />
-              </Field>
-
-              <div className="lg:col-span-2">
-                <Field label="Witness audit requirement (IAF MD4 §6)">
-                  <Select
-                    value={form.witnessRequirement}
-                    onChange={(v) => updateForm("witnessRequirement", v)}
-                    options={[
-                      "Yes — to be conducted during on-site phase",
-                      "No — exemption applicable"
-                    ]}
-                  />
-                </Field>
-              </div>
-            </div>
-          </Card>
-
-          {/* ✅ Add these below Accreditation scope & criteria (matches screenshot) */}
-          <Card
-            title="Audit team"
-            subtitle="Lead assessor, team & technical assessors"
-            icon="👥"
-            collapsed={collapsed.team}
-            onToggle={() => setCollapsed((p) => ({ ...p, team: !p.team }))}
-          >
-            <div className="space-y-3">
-              <div className="grid grid-cols-4 gap-4 px-1 text-[11px] tracking-widest text-slate-500">
-                <div>NAME</div>
-                <div>ROLE</div>
-                <div>QUALIFICATION</div>
-                <div>ASSIGNED AREA</div>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-black/10 overflow-hidden">
-                {team.map((m, idx) => (
-                  <div
-                    key={`${m.name}-${idx}`}
-                    className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0"
-                  >
-                    <div className="text-slate-200/90">{m.name}</div>
-                    <div>
-                      <RoleBadge tone={m.badgeTone}>{m.role}</RoleBadge>
-                    </div>
-                    <div className="text-slate-300/80">{m.qualification}</div>
-                    <div className="text-slate-300/80">{m.assignedArea}</div>
-                  </div>
-                ))}
-              </div>
-
+      {/* MAIN + RIGHT PANEL WRAPPER */}
+      <div className="flex-1 min-w-0 flex overflow-hidden">
+        <main className="flex-1 min-w-0 flex flex-col">
+          {/* Topbar */}
+          <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
+            <div className="flex items-center gap-2 min-w-0">
               <button
-                className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
-                onClick={openAddMember}
+                className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
+                onClick={() => setMobileSidebarOpen(true)}
+                aria-label="Open sidebar"
                 type="button"
               >
-                + Add team member
+                ☰
               </button>
-            </div>
-          </Card>
 
-          <Card
-            title="Pre-audit checklist"
-            subtitle="IAF MD4 planning requirements"
-            icon="✅"
-            collapsed={collapsed.checklist}
-            onToggle={() => setCollapsed((p) => ({ ...p, checklist: !p.checklist }))}
-          >
-            <div className="space-y-2">
-              {checklist.map((item, idx) => (
-                <div
-                  key={`${item.label}-${idx}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3"
-                >
-                  <label className="flex items-center gap-3 min-w-0 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onChange={() => toggleChecklist(idx)}
-                      className="h-4 w-4 rounded border-white/20 bg-black/30 text-amber-500 focus:ring-amber-500/20"
-                    />
+              <button
+                className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
+                onClick={() => setSidebarCollapsed((v) => !v)}
+                aria-label="Toggle sidebar collapse"
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                type="button"
+              >
+                {sidebarCollapsed ? "»" : "«"}
+              </button>
+
+              <div className="text-sm text-slate-400/90 truncate">
+                {breadcrumbs.map((b, idx) => (
+                  <span key={b} className="whitespace-nowrap">
+                    {b}
+                    {idx < breadcrumbs.length - 1 && <span className="mx-2 text-slate-600">›</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                className="h-9 px-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
+                type="button"
+                onClick={openDocs}
+              >
+                <span className="mr-2">📄</span>Documents
+              </button>
+
+              <button
+                className="h-9 px-3 rounded-full border border-amber-500/30 bg-amber-500/15 hover:bg-amber-500/20 transition text-sm font-extrabold text-amber-100"
+                type="button"
+                onClick={openNotifs}
+              >
+                <span className="mr-2">🔔</span>Alerts
+                {notificationsCount > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-rose-500/15 border border-rose-400/25 text-rose-200 text-xs font-black">
+                    {notificationsCount}
+                  </span>
+                )}
+              </button>
+
+              <div className="h-9 px-3 rounded-full border border-white/10 bg-white/5 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-rose-400" />
+                <span className="font-extrabold text-sm">RK</span>
+              </div>
+            </div>
+          </header>
+
+          {/* Context row */}
+          <section className="shrink-0 px-4 lg:px-5 py-3 border-b border-white/10 bg-black/10">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-slate-500">Standard:</span>
+
+              <button
+                type="button"
+                className="h-8 px-4 rounded-full text-xs font-extrabold border border-white/10 bg-black/20 text-slate-300/90 hover:bg-white/10 transition"
+                onClick={() => navigate("/audit-schedule")}
+                title="IATF 16949"
+              >
+                IATF 16949
+              </button>
+
+              <button
+                type="button"
+                className="h-8 px-4 rounded-full text-xs font-extrabold border border-amber-500/30 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20 transition"
+                onClick={() => navigate("/iaf-schedule")}
+                aria-current="page"
+                title="IAF MD4"
+              >
+                IAF MD4
+              </button>
+
+              <span className="mx-1 h-4 w-px bg-white/10" />
+              <span className="text-sm text-slate-400">
+                Bravo Industries <span className="text-slate-600">·</span> Initial Accreditation{" "}
+                <span className="text-slate-600">·</span> Lead: Sunita Rao
+              </span>
+            </div>
+          </section>
+
+          {/* Stepper */}
+          <section className="shrink-0 px-4 lg:px-5 pt-4 pb-2 border-b border-white/10 bg-black/10">
+            <div className="flex flex-wrap gap-3">
+              {steps.map((s, i) => {
+                const isActive = s === activeStep;
+                const isCompleted = steps.indexOf(activeStep) > i;
+
+                return (
+                  <button key={s} onClick={() => setActiveStep(s)} className="flex items-center gap-3" type="button">
                     <span
                       className={[
-<<<<<<< Updated upstream
-                        "text-sm truncate",
-                        item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90",
-=======
                         "h-8 w-8 rounded-full grid place-items-center text-xs font-black border",
                         isCompleted
                           ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
                           : isActive
                           ? "border-amber-400/30 bg-amber-500/20 text-amber-200"
                           : "border-white/10 bg-white/5 text-slate-500",
->>>>>>> Stashed changes
                       ].join(" ")}
-                      title={item.label}
                     >
-                      {item.label}
+                      {isCompleted ? "✓" : i + 1}
                     </span>
-<<<<<<< Updated upstream
-                  </label>
-
-                  <StatusPill status={item.status} />
-                </div>
-              ))}
-=======
                     <span
                       className={[
                         "text-sm font-extrabold",
@@ -533,25 +394,23 @@ export default function IafSchedule() {
                   </button>
                 );
               })}
->>>>>>> Stashed changes
             </div>
-          </Card>
-        </section>
+          </section>
 
-        {/* Bottom bar */}
-        <footer className="shrink-0 sticky bottom-0 border-t border-white/10 bg-slate-950/70 backdrop-blur px-4 lg:px-5 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <button className="h-10 px-3 rounded-xl border border-white/10 bg-transparent hover:bg-white/5 transition" type="button">
-                ← Previous
-              </button>
+          {/* Content */}
+          <section className="flex-1 min-h-0 overflow-auto px-4 lg:px-5 pb-28 space-y-4 bg-gradient-to-b from-black/0 to-black/20">
+            <Card
+              title="Audit details"
+              subtitle="IAF MD4 accreditation identification"
+              icon="📋"
+              collapsed={collapsed.details}
+              onToggle={() => setCollapsed((p) => ({ ...p, details: !p.details }))}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Field label="Conformity Assessment Body (CAB)" required>
+                  <Input value={form.cab} onChange={(v) => updateForm("cab", v)} />
+                </Field>
 
-<<<<<<< Updated upstream
-              <div className="h-10 px-3 rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-100 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="font-bold text-sm">Auto-saved</span>
-                <span className="text-sm text-emerald-100/70">{`at ${formatTime(autoSavedAt)}`}</span>
-=======
                 <Field label="Audit type" required>
                   <Select
                     value={form.auditType}
@@ -726,22 +585,11 @@ export default function IafSchedule() {
                 >
                   Save &amp; proceed to Desk Review →
                 </button>
->>>>>>> Stashed changes
               </div>
             </div>
+          </footer>
+        </main>
 
-<<<<<<< Updated upstream
-            <div className="flex flex-wrap items-center gap-2">
-              <button className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-bold" type="button">
-                Save draft
-              </button>
-              <button
-                className="h-10 px-4 rounded-xl border border-amber-500/30 bg-amber-500/20 hover:bg-amber-500/25 transition font-extrabold text-amber-100"
-                type="button"
-              >
-                Save &amp; proceed to Desk Review →
-              </button>
-=======
         {/* Docked Right Panel (reduced width) */}
         {rightPanelOpen && (
           <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 border-l border-white/10 bg-[#0B1220] overflow-hidden">
@@ -789,11 +637,10 @@ export default function IafSchedule() {
                   />
                 )}
               </div>
->>>>>>> Stashed changes
             </div>
-          </div>
-        </footer>
-      </main>
+          </aside>
+        )}
+      </div>
 
       {/* Add team member modal */}
       {addMemberOpen && (
@@ -868,7 +715,7 @@ export default function IafSchedule() {
   );
 }
 
-/* ------------------------------ Reusable UI ------------------------------ */
+/* ------------------------------ Reusable UI (same as earlier) ------------------------------ */
 
 function Card(props: {
   title: string;
@@ -880,20 +727,20 @@ function Card(props: {
 }) {
   const { title, subtitle, icon, collapsed, onToggle, children } = props;
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-white/[0.03] shadow-[0_25px_70px_rgba(0,0,0,0.32)] overflow-hidden">
-      <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-xl grid place-items-center border border-white/10 bg-white/5">
+    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-white/10 bg-black/10">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="h-11 w-11 rounded-2xl grid place-items-center border border-white/10 bg-[#2A1C14]">
             {icon ?? "▢"}
           </div>
           <div className="min-w-0">
-            <div className="font-extrabold truncate">{title}</div>
-            {subtitle && <div className="text-xs text-slate-400 truncate">{subtitle}</div>}
+            <div className="font-extrabold text-[16px] truncate text-slate-100">{title}</div>
+            {subtitle && <div className="text-sm text-slate-500 truncate">{subtitle}</div>}
           </div>
         </div>
 
         <button
-          className="h-9 w-9 rounded-xl grid place-items-center border border-white/10 bg-white/5 hover:bg-white/10 transition"
+          className="h-10 w-10 rounded-xl grid place-items-center border border-white/10 bg-white/5 hover:bg-white/10 transition text-slate-400"
           onClick={onToggle}
           aria-label="Toggle section"
           title="Toggle"
@@ -905,23 +752,15 @@ function Card(props: {
         </button>
       </div>
 
-      {!collapsed && <div className="p-4">{children}</div>}
+      {!collapsed && <div className="p-5">{children}</div>}
     </div>
   );
 }
 
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-2">
-      <div className="text-xs text-slate-400">
+      <div className="text-sm font-semibold text-slate-500">
         {label} {required && <span className="text-rose-400 font-black">*</span>}
       </div>
       {children}
@@ -929,15 +768,7 @@ function Field({
   );
 }
 
-function ModalField({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function ModalField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="text-xs text-slate-400">
@@ -962,7 +793,7 @@ function Input(props: {
       type={type ?? "text"}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
+      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
     />
   );
 }
@@ -974,7 +805,7 @@ function TextArea(props: { value: string; onChange: (v: string) => void; rows?: 
       value={value}
       rows={rows ?? 4}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10 resize-y"
+      className="kgs-field w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10 resize-y"
     />
   );
 }
@@ -985,7 +816,7 @@ function Select(props: { value: string; onChange: (v: string) => void; options: 
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="kgs-field h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-slate-100 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
+      className="kgs-field h-12 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-slate-100 outline-none focus:border-amber-500/30 focus:ring-2 focus:ring-amber-500/10"
     >
       {options.map((o) => (
         <option key={o} value={o} className="bg-slate-950">
@@ -996,7 +827,7 @@ function Select(props: { value: string; onChange: (v: string) => void; options: 
   );
 }
 
-function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNode }) {
+function RoleBadge({ tone, children }: { tone: "amber" | "slate" | "teal"; children: React.ReactNode }) {
   const toneCls =
     tone === "amber"
       ? "border-amber-500/30 bg-amber-500/15 text-amber-200"
@@ -1011,7 +842,7 @@ function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNo
   );
 }
 
-function StatusPill({ status }: { status: ChecklistItem["status"] }) {
+function StatusPill({ status }: { status: "Done" | "Required" | "Optional" }) {
   const cls =
     status === "Done"
       ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"

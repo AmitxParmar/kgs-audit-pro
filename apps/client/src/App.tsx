@@ -6,9 +6,8 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { ProtectedRoute, RoleRoute } from "./components/auth/AuthProvider";
 import { AdminRoutes } from "./pages/admin/AdminRoutes";
 import { ClientsPage } from "./pages/clients/ClientsPage";
-import  ClientOnboarding  from "./pages/clients/ClientOnboarding";
+import ClientOnboarding from "./pages/clients/ClientOnboarding";
 import { Toaster } from "react-hot-toast";
-
 
 import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
 import IafSchedule from "./pages/audit-schedule/IAFSchedule";
@@ -16,14 +15,17 @@ import IafSchedule from "./pages/audit-schedule/IAFSchedule";
 function App() {
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="top-center" reverseOrder={false} />
 
-        <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-      
-
         {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* ✅ PUBLIC (NO AUTH) */}
+        <Route path="/audit-schedule" element={<AuditSchedule />} />
+        {/* optional */}
+        <Route path="/iaf-schedule" element={<IafSchedule />} />
 
         {/* ✅ FULL PAGE (NO SIDEBAR) */}
         <Route
@@ -35,7 +37,7 @@ function App() {
           }
         />
 
-        {/* ✅ SIDEBAR LAYOUT */}
+        {/* ✅ SIDEBAR LAYOUT (PROTECTED) */}
         <Route
           element={
             <ProtectedRoute>
