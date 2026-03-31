@@ -67,6 +67,16 @@ export default function IafSchedule() {
     checklist: false,
   });
 
+<<<<<<< Updated upstream
+=======
+  // Docked right panel
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
+
+  // ✅ Dynamic unread notifications badge (replaces hardcoded 4)
+  const [notificationsCount, setNotificationsCount] = useState(0);
+
+>>>>>>> Stashed changes
   const [form, setForm] = useState<FormState>({
     cab: "Bravo Industries Cert. Body",
     auditType: "Initial Accreditation",
@@ -488,18 +498,42 @@ export default function IafSchedule() {
                     />
                     <span
                       className={[
+<<<<<<< Updated upstream
                         "text-sm truncate",
                         item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90",
+=======
+                        "h-8 w-8 rounded-full grid place-items-center text-xs font-black border",
+                        isCompleted
+                          ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+                          : isActive
+                          ? "border-amber-400/30 bg-amber-500/20 text-amber-200"
+                          : "border-white/10 bg-white/5 text-slate-500",
+>>>>>>> Stashed changes
                       ].join(" ")}
                       title={item.label}
                     >
                       {item.label}
                     </span>
+<<<<<<< Updated upstream
                   </label>
 
                   <StatusPill status={item.status} />
                 </div>
               ))}
+=======
+                    <span
+                      className={[
+                        "text-sm font-extrabold",
+                        isActive ? "text-slate-100" : "text-slate-500",
+                      ].join(" ")}
+                    >
+                      {s}
+                    </span>
+                    {i < steps.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
+                  </button>
+                );
+              })}
+>>>>>>> Stashed changes
             </div>
           </Card>
         </section>
@@ -512,13 +546,191 @@ export default function IafSchedule() {
                 ← Previous
               </button>
 
+<<<<<<< Updated upstream
               <div className="h-10 px-3 rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-100 flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="font-bold text-sm">Auto-saved</span>
                 <span className="text-sm text-emerald-100/70">{`at ${formatTime(autoSavedAt)}`}</span>
+=======
+                <Field label="Audit type" required>
+                  <Select
+                    value={form.auditType}
+                    onChange={(v) => updateForm("auditType", v)}
+                    options={["Initial Accreditation", "Surveillance", "Re-assessment", "Extension of scope"]}
+                  />
+                </Field>
+
+                <Field label="Accreditation body" required>
+                  <Input value={form.accreditationBody} onChange={(v) => updateForm("accreditationBody", v)} />
+                </Field>
+
+                <Field label="Planned start date">
+                  <Input value={form.plannedStart} onChange={(v) => updateForm("plannedStart", v)} type="date" />
+                </Field>
+
+                <Field label="Planned end date">
+                  <Input value={form.plannedEnd} onChange={(v) => updateForm("plannedEnd", v)} type="date" />
+                </Field>
+
+                <div className="hidden lg:block" />
+
+                <Field label="IAF document reference">
+                  <Input value={form.iafDocumentRef} onChange={(v) => updateForm("iafDocumentRef", v)} />
+                </Field>
+
+                <Field label="Scope of accreditation">
+                  <Input value={form.scopeOfAccreditation} onChange={(v) => updateForm("scopeOfAccreditation", v)} />
+                </Field>
+              </div>
+            </Card>
+
+            <Card
+              title="Accreditation scope & criteria"
+              subtitle="IAF MD4 clause applicability"
+              icon="🎯"
+              collapsed={collapsed.scope}
+              onToggle={() => setCollapsed((p) => ({ ...p, scope: !p.scope }))}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Field label="Scope description">
+                  <TextArea value={form.scopeDescription} onChange={(v) => updateForm("scopeDescription", v)} rows={3} />
+                </Field>
+
+                <Field label="Applicable IAF MD documents">
+                  <Select
+                    value={form.applicableDocs}
+                    onChange={(v) => updateForm("applicableDocs", v)}
+                    options={["IAF MD4, MD9, MD11", "IAF MD4 Only", "IAF MD4, MD5"]}
+                  />
+                </Field>
+
+                <div className="lg:col-span-2">
+                  <Field label="Witness audit requirement (IAF MD4 §6)">
+                    <Select
+                      value={form.witnessRequirement}
+                      onChange={(v) => updateForm("witnessRequirement", v)}
+                      options={["Yes — to be conducted during on-site phase", "No — exemption applicable"]}
+                    />
+                  </Field>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              title="Audit team"
+              subtitle="Lead assessor, team & technical assessors"
+              icon="👥"
+              collapsed={collapsed.team}
+              onToggle={() => setCollapsed((p) => ({ ...p, team: !p.team }))}
+            >
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-4 px-1 text-[11px] tracking-widest text-slate-500">
+                  <div>NAME</div>
+                  <div>ROLE</div>
+                  <div>QUALIFICATION</div>
+                  <div>ASSIGNED AREA</div>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-black/10 overflow-hidden">
+                  {team.map((m, idx) => (
+                    <div
+                      key={`${m.name}-${idx}`}
+                      className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0"
+                    >
+                      <div className="text-slate-200/90">{m.name}</div>
+                      <div>
+                        <RoleBadge tone={m.badgeTone}>{m.role}</RoleBadge>
+                      </div>
+                      <div className="text-slate-300/80">{m.qualification}</div>
+                      <div className="text-slate-300/80">{m.assignedArea}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
+                  onClick={openAddMember}
+                  type="button"
+                >
+                  + Add team member
+                </button>
+              </div>
+            </Card>
+
+            <Card
+              title="Pre-audit checklist"
+              subtitle="IAF MD4 planning requirements"
+              icon="✅"
+              collapsed={collapsed.checklist}
+              onToggle={() => setCollapsed((p) => ({ ...p, checklist: !p.checklist }))}
+            >
+              <div className="space-y-2">
+                {checklist.map((item, idx) => (
+                  <div
+                    key={`${item.label}-${idx}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3"
+                  >
+                    <label className="flex items-center gap-3 min-w-0 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={() => toggleChecklist(idx)}
+                        className="h-4 w-4 rounded border-white/20 bg-black/30 text-amber-500 focus:ring-amber-500/20"
+                      />
+                      <span
+                        className={[
+                          "text-sm truncate",
+                          item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90",
+                        ].join(" ")}
+                        title={item.label}
+                      >
+                        {item.label}
+                      </span>
+                    </label>
+
+                    <StatusPill status={item.status} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </section>
+
+          {/* Bottom bar */}
+          <footer className="shrink-0 sticky bottom-0 border-t border-white/10 bg-black/30 backdrop-blur px-4 lg:px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  className="h-10 px-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300"
+                  type="button"
+                >
+                  ← Previous
+                </button>
+
+                <div className="h-10 px-3 rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-100 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="font-extrabold text-sm">Auto-saved</span>
+                  <span className="text-sm text-emerald-100/70">{`at ${formatTime(autoSavedAt)}`}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="h-10 px-6 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 transition font-semibold text-slate-300"
+                  type="button"
+                >
+                  Save draft
+                </button>
+                <button
+                  className="h-10 px-6 rounded-xl border border-amber-500/30 bg-[#F3A300] hover:brightness-110 transition font-extrabold text-black"
+                  type="button"
+                >
+                  Save &amp; proceed to Desk Review →
+                </button>
+>>>>>>> Stashed changes
               </div>
             </div>
 
+<<<<<<< Updated upstream
             <div className="flex flex-wrap items-center gap-2">
               <button className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-bold" type="button">
                 Save draft
@@ -529,6 +741,55 @@ export default function IafSchedule() {
               >
                 Save &amp; proceed to Desk Review →
               </button>
+=======
+        {/* Docked Right Panel (reduced width) */}
+        {rightPanelOpen && (
+          <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 border-l border-white/10 bg-[#0B1220] overflow-hidden">
+            <div className="flex-1 min-w-0 flex flex-col">
+              {/* tabs header */}
+              <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-10">
+                    {headerTab("documents", "Documents", "▦")}
+                    {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
+                  </div>
+
+                  <button
+                    className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
+                    onClick={closeRightPanel}
+                    aria-label="Close panel"
+                    type="button"
+                    title="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* underline indicator */}
+                <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={[
+                      "h-full w-1/2 bg-[#F3A300] transition-transform duration-300",
+                      rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
+                    ].join(" ")}
+                  />
+                </div>
+              </div>
+
+              {/* scroll body */}
+              <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
+                {rightPanelTab === "documents" ? (
+                  <Document theme="iaf" auditType="iaf" auditId={null} />
+                ) : (
+                  <Notification
+                    theme="iaf"
+                    auditType="iaf"
+                    auditId={null}
+                    onUnreadCountChange={setNotificationsCount}
+                  />
+                )}
+              </div>
+>>>>>>> Stashed changes
             </div>
           </div>
         </footer>
@@ -740,8 +1001,8 @@ function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNo
     tone === "amber"
       ? "border-amber-500/30 bg-amber-500/15 text-amber-200"
       : tone === "teal"
-        ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
-        : "border-white/10 bg-white/5 text-slate-200/80";
+      ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
+      : "border-white/10 bg-white/5 text-slate-200/80";
 
   return (
     <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>
@@ -755,8 +1016,8 @@ function StatusPill({ status }: { status: ChecklistItem["status"] }) {
     status === "Done"
       ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
       : status === "Required"
-        ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
-        : "border-slate-400/20 bg-white/5 text-slate-300/80";
+      ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
+      : "border-slate-400/20 bg-white/5 text-slate-300/80";
 
   return (
     <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>

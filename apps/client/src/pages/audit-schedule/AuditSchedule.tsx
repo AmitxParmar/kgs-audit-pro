@@ -66,6 +66,14 @@ export default function AuditSchedule() {
     checklist: false,
   });
 
+<<<<<<< Updated upstream
+=======
+  // Right panel
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
+  const notificationsCount = 0;
+
+>>>>>>> Stashed changes
   const [form, setForm] = useState<FormState>({
     customer: "Acme Motors Pvt Ltd",
     auditType: "Customer Audit",
@@ -202,8 +210,12 @@ export default function AuditSchedule() {
   };
 
   return (
+<<<<<<< Updated upstream
     <div className="h-screen w-full bg-slate-950 text-slate-200 flex overflow-hidden">
       {/* Force dark inputs even on focus/autofill (prevents white fields) */}
+=======
+    <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
+>>>>>>> Stashed changes
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
@@ -231,6 +243,7 @@ export default function AuditSchedule() {
         setMobileSidebarOpen={setMobileSidebarOpen}
       />
 
+<<<<<<< Updated upstream
       {/* Main */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Topbar */}
@@ -254,6 +267,30 @@ export default function AuditSchedule() {
             >
               {sidebarCollapsed ? "»" : "«"}
             </button>
+=======
+      <div className="flex-1 min-w-0 flex overflow-hidden">
+        <main className="flex-1 min-w-0 flex flex-col">
+          <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
+                onClick={() => setMobileSidebarOpen(true)}
+                aria-label="Open sidebar"
+                type="button"
+              >
+                ☰
+              </button>
+
+              <button
+                className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
+                onClick={() => setSidebarCollapsed((v) => !v)}
+                aria-label="Toggle sidebar collapse"
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                type="button"
+              >
+                {sidebarCollapsed ? "»" : "«"}
+              </button>
+>>>>>>> Stashed changes
 
             <div className="text-sm text-slate-300/90 truncate">
               {breadcrumbs.map((b, idx) => (
@@ -265,6 +302,7 @@ export default function AuditSchedule() {
             </div>
           </div>
 
+<<<<<<< Updated upstream
           <div className="flex items-center gap-2">
             <button
               className="h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
@@ -281,6 +319,35 @@ export default function AuditSchedule() {
             <div className="h-9 px-3 rounded-full border border-white/10 bg-white/5 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-rose-400" />
               <span className="font-bold text-sm">RK</span>
+=======
+          <section className="shrink-0 px-4 lg:px-5 py-3 border-b border-white/10 bg-black/10">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-slate-500">Standard:</span>
+
+              <div className="inline-flex rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+                <button
+                  type="button"
+                  className="h-9 px-4 text-sm font-extrabold bg-blue-500/15 text-blue-200 border-r border-white/10"
+                  onClick={() => navigate("/audit-schedule")}
+                  aria-current="page"
+                >
+                  IATF 16949
+                </button>
+                <button
+                  type="button"
+                  className="h-9 px-4 text-sm font-extrabold text-slate-400 hover:bg-white/5"
+                  onClick={() => navigate("/iaf-schedule")}
+                >
+                  IAF MD4
+                </button>
+              </div>
+
+              <span className="mx-1 h-4 w-px bg-white/10" />
+              <span className="text-sm text-slate-400">
+                Acme Motors Q2 <span className="text-slate-600">·</span> Customer Audit{" "}
+                <span className="text-slate-600">·</span> Lead: Rajesh Kumar
+              </span>
+>>>>>>> Stashed changes
             </div>
           </div>
         </header>
@@ -608,14 +675,11 @@ export default function AuditSchedule() {
                 </ModalField>
 
                 <ModalField label="Role" error={memberErrors.role}>
-                  <Select
-                    value={memberDraft.role}
-                    onChange={(v) => setMemberDraft((p) => ({ ...p, role: v }))}
-                    options={["Lead Auditor", "Auditor", "Technical Expert"]}
-                  />
+                  <Select value={memberDraft.role} onChange={(v) => setMemberDraft((p) => ({ ...p, role: v }))} options={["Lead Auditor", "Auditor", "Technical Expert"]} />
                 </ModalField>
 
                 <ModalField label="Qualification" error={memberErrors.qualification}>
+<<<<<<< Updated upstream
                   <Input
                     value={memberDraft.qualification}
                     onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))}
@@ -629,22 +693,29 @@ export default function AuditSchedule() {
                     onChange={(v) => setMemberDraft((p) => ({ ...p, assignedProcess: v }))}
                     placeholder="e.g. Production, QMS"
                   />
+=======
+                  <Input value={memberDraft.qualification} onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))} />
+                </ModalField>
+
+                <ModalField label="Assigned process" error={memberErrors.assignedProcess}>
+                  <Input value={memberDraft.assignedProcess} onChange={(v) => setMemberDraft((p) => ({ ...p, assignedProcess: v }))} />
+>>>>>>> Stashed changes
                 </ModalField>
               </div>
 
               <div className="px-5 py-4 border-t border-white/10 bg-white/[0.03] flex items-center justify-end gap-2">
-                <button
-                  className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-bold"
-                  onClick={closeAddMember}
-                  type="button"
-                >
+                <button className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-bold" onClick={closeAddMember} type="button">
                   Cancel
                 </button>
+<<<<<<< Updated upstream
                 <button
                   className="h-10 px-4 rounded-xl border border-blue-500/30 bg-gradient-to-b from-blue-600 to-indigo-800 hover:from-blue-500 hover:to-indigo-700 transition font-extrabold text-white shadow-[0_18px_45px_rgba(59,130,246,0.22)]"
                   onClick={saveMember}
                   type="button"
                 >
+=======
+                <button className="h-10 px-4 rounded-xl border border-blue-500/30 bg-blue-600/20 hover:bg-blue-600/25 transition font-extrabold text-blue-100" onClick={saveMember} type="button">
+>>>>>>> Stashed changes
                   Add member
                 </button>
               </div>
@@ -743,12 +814,7 @@ function ModalField({
   );
 }
 
-function Input(props: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: React.HTMLInputTypeAttribute;
-}) {
+function Input(props: { value: string; onChange: (v: string) => void; placeholder?: string; type?: React.HTMLInputTypeAttribute }) {
   const { value, onChange, placeholder, type } = props;
   return (
     <input
