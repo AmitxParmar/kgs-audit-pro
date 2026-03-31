@@ -2,53 +2,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { authService, AuthUser } from '../lib/auth'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-
+import { useAuthContext } from '../context/AuthContext'
 export function useAuth() {
   const queryClient               = useQueryClient()
  // const navigate                  = useNavigate()
   const [user, setUser]           = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-useEffect(() => {
-  let mounted = true
-
-  // ✅ Never block UI more than 3 seconds
-  const timeout = setTimeout(() => {
-    if (mounted) setIsLoading(false)
-  }, 3000)
-
-  const initAuth = async () => {
-    try {
-      const sessionUser = await authService.getSession()
-      if (!mounted) return
-      setUser(sessionUser)
-      queryClient.setQueryData(['auth', 'user'], sessionUser)
-    } catch (err) {
-      console.error('Auth init error:', err)
-    } finally {
-      clearTimeout(timeout)
-      if (mounted) setIsLoading(false)
-    }
-  }
-
-  initAuth()
-
-  const { data } = authService.onAuthStateChange((authUser) => {
-    if (!mounted) return
-
-    setUser(authUser)
-    setIsLoading(false)
-    queryClient.setQueryData(['auth', 'user'], authUser)
-  })
-
-  const subscription = data.subscription
-
-  return () => {
-    mounted = false
-    subscription.unsubscribe()
-  }
-}, [queryClient])
-
+export function useAuth() {
+  const { user, isLoading } = useAuthContext()  // ← just read context
+  const queryClient = useQueryClient()
   // ── Login ─────────────────────────────────────────────────────────────────
   // mutationFn returns the full Supabase data object so AuthForm can
   // read data.session and navigate immediately — no race condition
