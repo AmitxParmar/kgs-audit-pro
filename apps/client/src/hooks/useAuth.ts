@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 export function useAuth() {
   const queryClient               = useQueryClient()
-  const navigate                  = useNavigate()
+ // const navigate                  = useNavigate()
   const [user, setUser]           = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
