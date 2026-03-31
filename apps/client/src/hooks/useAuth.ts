@@ -12,17 +12,21 @@ export function useAuth() {
 useEffect(() => {
   let mounted = true
 
+  // ✅ Never block UI more than 3 seconds
+  const timeout = setTimeout(() => {
+    if (mounted) setIsLoading(false)
+  }, 3000)
+
   const initAuth = async () => {
     try {
       const sessionUser = await authService.getSession()
-
       if (!mounted) return
-
       setUser(sessionUser)
       queryClient.setQueryData(['auth', 'user'], sessionUser)
     } catch (err) {
       console.error('Auth init error:', err)
     } finally {
+      clearTimeout(timeout)
       if (mounted) setIsLoading(false)
     }
   }
