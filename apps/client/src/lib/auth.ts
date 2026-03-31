@@ -4,7 +4,8 @@ export interface AuthUser {
   id: string
   email: string
   name?: string
-  role?: string
+  user_role?: 'super_admin' | 'cb_admin' ...  // ← second uses 'user_role'
+  cb_id?: string
 }
 
 export interface LoginCredentials {
