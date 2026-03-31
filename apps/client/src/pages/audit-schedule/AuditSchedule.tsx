@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KgsSidebar from "./KGSSidebar";
-import Document, { type PanelTheme } from "./Document";
+import Document from "./Document";
 import Notification from "./Notification";
 
 type CollapsedSections = { details: boolean; scope: boolean; team: boolean; checklist: boolean };
@@ -50,8 +50,7 @@ type MemberErrors = Partial<Record<keyof MemberDraft, string>>;
 type RightPanelTab = "documents" | "notifications";
 
 export default function AuditSchedule() {
-  
-  const theme: PanelTheme = "audit";
+  const navigate = useNavigate(); // ✅ FIX: required for IATF/IAF buttons to work
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -177,7 +176,11 @@ export default function AuditSchedule() {
     if (Object.keys(errs).length > 0) return;
 
     const tone: TeamTone =
-      memberDraft.role === "Lead Auditor" ? "blue" : memberDraft.role === "Technical Expert" ? "teal" : "slate";
+      memberDraft.role === "Lead Auditor"
+        ? "blue"
+        : memberDraft.role === "Technical Expert"
+          ? "teal"
+          : "slate";
 
     setTeam((p) => [
       ...p,
@@ -366,13 +369,18 @@ export default function AuditSchedule() {
                         isCompleted
                           ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
                           : isActive
-                          ? "border-blue-400/30 bg-blue-500/20 text-blue-200"
-                          : "border-white/10 bg-white/5 text-slate-500",
+                            ? "border-blue-400/30 bg-blue-500/20 text-blue-200"
+                            : "border-white/10 bg-white/5 text-slate-500",
                       ].join(" ")}
                     >
                       {isCompleted ? "✓" : i + 1}
                     </span>
-                    <span className={["text-sm font-extrabold", isActive ? "text-slate-100" : "text-slate-500"].join(" ")}>
+                    <span
+                      className={[
+                        "text-sm font-extrabold",
+                        isActive ? "text-slate-100" : "text-slate-500",
+                      ].join(" ")}
+                    >
                       {s}
                     </span>
                     {i < steps.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
@@ -439,11 +447,19 @@ export default function AuditSchedule() {
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Field label="Scope of certification">
-                  <TextArea value={form.scopeOfCertification} onChange={(v) => updateForm("scopeOfCertification", v)} rows={3} />
+                  <TextArea
+                    value={form.scopeOfCertification}
+                    onChange={(v) => updateForm("scopeOfCertification", v)}
+                    rows={3}
+                  />
                 </Field>
 
                 <Field label="Customer Specific Requirements (CSR)">
-                  <Select value={form.csr} onChange={(v) => updateForm("csr", v)} options={["BMW Group CSR", "Ford CSR", "GM CSR", "VW Group CSR"]} />
+                  <Select
+                    value={form.csr}
+                    onChange={(v) => updateForm("csr", v)}
+                    options={["BMW Group CSR", "Ford CSR", "GM CSR", "VW Group CSR"]}
+                  />
                 </Field>
 
                 <div className="lg:col-span-2">
@@ -476,7 +492,10 @@ export default function AuditSchedule() {
 
                 <div className="rounded-xl border border-white/10 bg-black/10 overflow-hidden">
                   {team.map((m, idx) => (
-                    <div key={`${m.name}-${idx}`} className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0">
+                    <div
+                      key={`${m.name}-${idx}`}
+                      className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0"
+                    >
                       <div className="text-slate-200/90 font-semibold">{m.name}</div>
                       <div>
                         <RoleBadge tone={m.badgeTone}>{m.role}</RoleBadge>
@@ -507,7 +526,10 @@ export default function AuditSchedule() {
             >
               <div className="space-y-2">
                 {checklist.map((item, idx) => (
-                  <div key={`${item.label}-${idx}`} className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3">
+                  <div
+                    key={`${item.label}-${idx}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3"
+                  >
                     <label className="flex items-center gap-3 min-w-0 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -516,7 +538,10 @@ export default function AuditSchedule() {
                         className="h-4 w-4 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-blue-500/20"
                       />
                       <span
-                        className={["text-sm truncate", item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90"].join(" ")}
+                        className={[
+                          "text-sm truncate",
+                          item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90",
+                        ].join(" ")}
                         title={item.label}
                       >
                         {item.label}
@@ -570,7 +595,10 @@ export default function AuditSchedule() {
         {/* MOBILE Right Panel Drawer (match IAF pattern) */}
         {rightPanelOpen && (
           <>
-            <div className="lg:hidden fixed inset-0 z-[69] bg-black/60 backdrop-blur-[2px]" onClick={closeRightPanel} />
+            <div
+              className="lg:hidden fixed inset-0 z-[69] bg-black/60 backdrop-blur-[2px]"
+              onClick={closeRightPanel}
+            />
 
             <aside
               className={[
@@ -763,8 +791,8 @@ function Card(props: {
     iconTone === "purple"
       ? "bg-purple-500/15 border-purple-500/25"
       : iconTone === "green"
-      ? "bg-emerald-400/10 border-emerald-400/25"
-      : "bg-white/5 border-white/10";
+        ? "bg-emerald-400/10 border-emerald-400/25"
+        : "bg-white/5 border-white/10";
 
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden">
@@ -818,7 +846,12 @@ function ModalField({ label, error, children }: { label: string; error?: string;
   );
 }
 
-function Input(props: { value: string; onChange: (v: string) => void; placeholder?: string; type?: React.HTMLInputTypeAttribute }) {
+function Input(props: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: React.HTMLInputTypeAttribute;
+}) {
   const { value, onChange, placeholder, type } = props;
   return (
     <input
@@ -865,10 +898,14 @@ function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNo
     tone === "blue"
       ? "border-blue-500/30 bg-blue-500/15 text-blue-200"
       : tone === "teal"
-      ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
-      : "border-white/10 bg-white/5 text-slate-200/80";
+        ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
+        : "border-white/10 bg-white/5 text-slate-200/80";
 
-  return <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>{children}</span>;
+  return (
+    <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>
+      {children}
+    </span>
+  );
 }
 
 function StatusPill({ status }: { status: ChecklistItem["status"] }) {
@@ -876,8 +913,12 @@ function StatusPill({ status }: { status: ChecklistItem["status"] }) {
     status === "Done"
       ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
       : status === "Required"
-      ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
-      : "border-slate-400/20 bg-white/5 text-slate-300/80";
+        ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
+        : "border-slate-400/20 bg-white/5 text-slate-300/80";
 
-  return <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>{status}</span>;
+  return (
+    <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>
+      {status}
+    </span>
+  );
 }
