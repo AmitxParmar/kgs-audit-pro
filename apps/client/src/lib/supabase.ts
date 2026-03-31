@@ -1,20 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
-<<<<<<< Updated upstream
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
 
-// Optional debug logs
-console.log('Supabase URL:', supabaseUrl)
-console.log('Anon key length:', supabaseAnonKey.length)
-=======
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY");
 }
->>>>>>> Stashed changes
+
 
 // hosted-only guard
 if (supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost")) {
