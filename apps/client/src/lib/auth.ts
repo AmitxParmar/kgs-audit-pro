@@ -95,27 +95,19 @@ export const authService = {
 
 getSession: async (): Promise<AuthUser | null> => {
   try {
-    
-    const { data: profile, error: profileError } = await supabase
-  .from('users')
-  .select('role, cb_id, full_name')
-  .eq('id', session.user.id)
-  .maybeSingle()
-
-console.log('PROFILE:', profile)
-console.log('PROFILE ERROR:', profileError)  // ← this will tell you exactly if it's RLS
     const { data: { session }, error } = await supabase.auth.getSession()
-
     console.log("SESSION:", session)
-    console.log("SESSION ERROR:", error)
-
     if (!session?.user) return null
 
-    const { data: profile } = await supabase
+    // Only ONE profile declaration
+    const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('role, cb_id, full_name')
       .eq('id', session.user.id)
       .maybeSingle()
+
+    console.log('PROFILE:', profile)
+    console.log('PROFILE ERROR:', profileError)
 
     return {
       id: session.user.id,
@@ -129,7 +121,6 @@ console.log('PROFILE ERROR:', profileError)  // ← this will tell you exactly i
     return null
   }
 },
-
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
   return supabase.auth.onAuthStateChange(async (_event, session) => {
     if (!session?.user) { callback(null); return }
