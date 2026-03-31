@@ -1,20 +1,18 @@
-import { ReactNode, useEffect } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+// src/components/auth/AuthProvider.tsx
+import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
+import { useAuthContext } from '../../context/AuthContext'
+
+const PUBLIC_PATHS = ['/audit-schedule', '/iaf-schedule', '/login', '/reset-password']
 
 interface AuthProviderProps {
   children: ReactNode
 }
 
-
-
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isLoading } = useAuth()
-  
-  // Don't block public routes
-  const PUBLIC_PATHS = ['/audit-schedule', '/iaf-schedule', '/login', '/reset-password']
+  const { isLoading } = useAuthContext()
   const isPublic = PUBLIC_PATHS.includes(window.location.pathname)
-  
+
   if (isLoading && !isPublic) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -22,7 +20,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       </div>
     )
   }
-  
+
   return <>{children}</>
 }
 
@@ -32,14 +30,12 @@ interface RoleRouteProps {
 }
 
 export function RoleRoute({ children, allowedRoles }: RoleRouteProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading } = useAuthContext()
 
   if (isLoading) return null
-
   if (!user) return <Navigate to="/login" replace />
-
   if (!user.role || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />   // redirect to their own dashboard
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>
@@ -50,7 +46,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading } = useAuthContext()
 
   if (isLoading) {
     return (
