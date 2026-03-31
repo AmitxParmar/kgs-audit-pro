@@ -22,12 +22,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* ✅ PUBLIC (NO AUTH) */}
-        <Route path="/audit-schedule" element={<AuditSchedule />} />
-        {/* optional */}
-        <Route path="/iaf-schedule" element={<IafSchedule />} />
-
-        {/* ✅ FULL PAGE (NO SIDEBAR) */}
+        {/* FULL PAGE (NO SIDEBAR) */}
         <Route
           path="/clients/onboard"
           element={
@@ -37,7 +32,7 @@ function App() {
           }
         />
 
-        {/* ✅ SIDEBAR LAYOUT (PROTECTED) */}
+        {/* SIDEBAR LAYOUT (PROTECTED) */}
         <Route
           element={
             <ProtectedRoute>
@@ -47,6 +42,10 @@ function App() {
         >
           <Route path="/" element={<Dashboard />} />
           <Route path="/clients" element={<ClientsPage />} />
+
+          {/* ✅ Audit pages (now they show inside AppShell sidebar layout) */}
+          <Route path="/audit-schedule" element={<AuditSchedule />} />
+          <Route path="/iaf-schedule" element={<IafSchedule />} />
 
           <Route
             path="/admin/*"

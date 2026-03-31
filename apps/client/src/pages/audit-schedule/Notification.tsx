@@ -57,8 +57,8 @@ function tonePill(tone: Tone) {
     tone === "danger"
       ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
       : tone === "warning"
-      ? "border-amber-400/25 bg-amber-400/10 text-amber-200"
-      : "border-slate-400/20 bg-white/5 text-slate-200/80";
+        ? "border-amber-400/25 bg-amber-400/10 text-amber-200"
+        : "border-slate-400/20 bg-white/5 text-slate-200/80";
 
   const label = tone === "danger" ? "Danger" : tone === "warning" ? "Warning" : "Info";
 
@@ -127,25 +127,26 @@ export default function Notification({
   }, [items, query]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.03] p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold text-slate-300/90">Notifications</div>
-          <div className="text-sm font-extrabold text-slate-100">{items.length} items</div>
+    <div className="min-w-0 w-full space-y-4">
+      <div className="min-w-0 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.03] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-slate-300/90 truncate">Notifications</div>
+          <div className="text-sm font-extrabold text-slate-100 shrink-0">{items.length} items</div>
         </div>
         <div className="mt-3 h-2 rounded-full bg-black/30 border border-white/10 overflow-hidden">
           <div className={`h-full ${t.accentBar}`} style={{ width: "100%" }} />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 relative">
+      {/* Search + Refresh: wrap-safe */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+        <div className="flex-1 relative min-w-0">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔎</span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={[
-              "h-10 w-full rounded-xl border border-white/10 bg-black/20 pl-10 pr-3 text-slate-100 placeholder:text-slate-600 outline-none",
+              "h-10 w-full min-w-0 rounded-xl border border-white/10 bg-black/20 pl-10 pr-3 text-slate-100 placeholder:text-slate-600 outline-none",
               "focus:ring-2",
               t.focusRing,
             ].join(" ")}
@@ -154,7 +155,7 @@ export default function Notification({
         </div>
 
         <button
-          className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-extrabold text-slate-200"
+          className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition font-extrabold text-slate-200 shrink-0"
           type="button"
           onClick={() => void refresh()}
         >
@@ -163,10 +164,12 @@ export default function Notification({
       </div>
 
       {errorMsg && (
-        <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-200">{errorMsg}</div>
+        <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-200">
+          {errorMsg}
+        </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-w-0">
         {loading && (
           <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-slate-400">Loading...</div>
         )}
@@ -181,27 +184,27 @@ export default function Notification({
           filtered.map((n) => (
             <div
               key={n.id}
-              className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] px-4 py-3"
+              className="min-w-0 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] px-4 py-3"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-3 min-w-0">
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <div className="font-extrabold text-slate-100 truncate">{n.title}</div>
 
                     {n.unread && (
-                      <span className="inline-flex items-center h-6 px-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-200 text-xs font-black">
+                      <span className="inline-flex items-center h-6 px-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-200 text-xs font-black shrink-0">
                         New
                       </span>
                     )}
 
                     {n.action_needed && (
-                      <span className="inline-flex items-center h-6 px-2 rounded-full border border-rose-400/25 bg-rose-400/10 text-rose-200 text-xs font-black">
+                      <span className="inline-flex items-center h-6 px-2 rounded-full border border-rose-400/25 bg-rose-400/10 text-rose-200 text-xs font-black shrink-0">
                         Action
                       </span>
                     )}
                   </div>
 
-                  <div className="text-sm text-slate-300/80 mt-1">{n.description}</div>
+                  <div className="text-sm text-slate-300/80 mt-1 break-words">{n.description}</div>
 
                   <div className="text-xs text-slate-500 mt-2">{n.time_label ?? formatDateTime(n.created_at)}</div>
                 </div>

@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import KgsSidebar from "./KGSSidebar";
 import Document from "./Document";
 import Notification from "./Notification";
 
@@ -50,11 +49,9 @@ type MemberErrors = Partial<Record<keyof MemberDraft, string>>;
 type RightPanelTab = "documents" | "notifications";
 
 export default function AuditSchedule() {
-  const navigate = useNavigate(); // ✅ FIX: required for IATF/IAF buttons to work
+  const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState<CollapsedSections>({
     details: false,
@@ -63,7 +60,7 @@ export default function AuditSchedule() {
     checklist: false,
   });
 
-  // Right panel (match IAF structure: mobile drawer + desktop docked)
+  // Right panel
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
   const [notificationsCount, setNotificationsCount] = useState(0);
@@ -196,16 +193,27 @@ export default function AuditSchedule() {
     setAddMemberOpen(false);
   };
 
-  // Right panel controls
-  const openDocs = () => {
-    setRightPanelTab("documents");
+  // ------------------ Right panel controls ------------------
+  const openRightPanel = (tab: RightPanelTab) => {
+    setRightPanelTab(tab);
     setRightPanelOpen(true);
   };
-  const openNotifs = () => {
-    setRightPanelTab("notifications");
-    setRightPanelOpen(true);
-  };
+  const openDocs = () => openRightPanel("documents");
+  const openNotifs = () => openRightPanel("notifications");
   const closeRightPanel = () => setRightPanelOpen(false);
+  const toggleRightPanel = () => setRightPanelOpen((v) => !v);
+
+  // Optional: ESC closes panel
+  useEffect(() => {
+    if (!rightPanelOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeRightPanel();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [rightPanelOpen]);
 
   const headerTab = (t: RightPanelTab, label: string, icon: string, badge?: number) => {
     const active = rightPanelTab === t;
@@ -230,8 +238,11 @@ export default function AuditSchedule() {
     );
   };
 
+  // Desktop panel width (responsive) — matches the padding we apply to <main>
+  const desktopPanelW = "min(480px,35vw)";
+
   return (
-    <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
+    <div className="h-full w-full bg-[#0B1220] text-slate-200 flex overflow-hidden overflow-x-hidden">
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
@@ -252,37 +263,19 @@ export default function AuditSchedule() {
         input.kgs-field[type="date"] { color-scheme: dark; }
       `}</style>
 
-      <KgsSidebar
-        sidebarCollapsed={sidebarCollapsed}
-        mobileSidebarOpen={mobileSidebarOpen}
-        setMobileSidebarOpen={setMobileSidebarOpen}
-      />
-
-      {/* MAIN + RIGHT PANEL WRAPPER */}
-      <div className="flex-1 min-w-0 flex overflow-hidden">
-        <main className="flex-1 min-w-0 flex flex-col">
+      {/* Wrapper is relative so desktop panel can overlay without changing layout width */}
+      <div className="relative flex-1 min-w-0 w-full flex overflow-hidden">
+        {/* MAIN */}
+        <main
+          className={[
+            "flex-1 min-w-0 flex flex-col transition-[padding] duration-200",
+            // On desktop, when panel is open, reserve space so content doesn't sit under it
+            rightPanelOpen ? `lg:pr-[${desktopPanelW}]` : "lg:pr-0",
+          ].join(" ")}
+        >
           {/* Topbar */}
           <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
-                onClick={() => setMobileSidebarOpen(true)}
-                aria-label="Open sidebar"
-                type="button"
-              >
-                ☰
-              </button>
-
-              <button
-                className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                aria-label="Toggle sidebar collapse"
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                type="button"
-              >
-                {sidebarCollapsed ? "»" : "«"}
-              </button>
-
               <div className="text-sm text-slate-400/90 truncate">
                 {breadcrumbs.map((b, idx) => (
                   <span key={b} className="whitespace-nowrap">
@@ -294,6 +287,8 @@ export default function AuditSchedule() {
             </div>
 
             <div className="flex items-center gap-2">
+              
+
               <button
                 className="h-9 px-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
                 type="button"
@@ -375,12 +370,7 @@ export default function AuditSchedule() {
                     >
                       {isCompleted ? "✓" : i + 1}
                     </span>
-                    <span
-                      className={[
-                        "text-sm font-extrabold",
-                        isActive ? "text-slate-100" : "text-slate-500",
-                      ].join(" ")}
-                    >
+                    <span className={["text-sm font-extrabold", isActive ? "text-slate-100" : "text-slate-500"].join(" ")}>
                       {s}
                     </span>
                     {i < steps.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
@@ -447,11 +437,7 @@ export default function AuditSchedule() {
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Field label="Scope of certification">
-                  <TextArea
-                    value={form.scopeOfCertification}
-                    onChange={(v) => updateForm("scopeOfCertification", v)}
-                    rows={3}
-                  />
+                  <TextArea value={form.scopeOfCertification} onChange={(v) => updateForm("scopeOfCertification", v)} rows={3} />
                 </Field>
 
                 <Field label="Customer Specific Requirements (CSR)">
@@ -492,10 +478,7 @@ export default function AuditSchedule() {
 
                 <div className="rounded-xl border border-white/10 bg-black/10 overflow-hidden">
                   {team.map((m, idx) => (
-                    <div
-                      key={`${m.name}-${idx}`}
-                      className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0"
-                    >
+                    <div key={`${m.name}-${idx}`} className="grid grid-cols-4 gap-4 px-4 py-3 text-sm border-t border-white/10 first:border-t-0">
                       <div className="text-slate-200/90 font-semibold">{m.name}</div>
                       <div>
                         <RoleBadge tone={m.badgeTone}>{m.role}</RoleBadge>
@@ -526,10 +509,7 @@ export default function AuditSchedule() {
             >
               <div className="space-y-2">
                 {checklist.map((item, idx) => (
-                  <div
-                    key={`${item.label}-${idx}`}
-                    className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3"
-                  >
+                  <div key={`${item.label}-${idx}`} className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3">
                     <label className="flex items-center gap-3 min-w-0 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -538,10 +518,7 @@ export default function AuditSchedule() {
                         className="h-4 w-4 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-blue-500/20"
                       />
                       <span
-                        className={[
-                          "text-sm truncate",
-                          item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90",
-                        ].join(" ")}
+                        className={["text-sm truncate", item.checked ? "text-slate-300/60 line-through" : "text-slate-200/90"].join(" ")}
                         title={item.label}
                       >
                         {item.label}
@@ -592,108 +569,58 @@ export default function AuditSchedule() {
           </footer>
         </main>
 
-        {/* MOBILE Right Panel Drawer (match IAF pattern) */}
+        {/* MOBILE Right Panel Drawer */}
         {rightPanelOpen && (
           <>
-            <div
-              className="lg:hidden fixed inset-0 z-[69] bg-black/60 backdrop-blur-[2px]"
-              onClick={closeRightPanel}
-            />
+            <div className="lg:hidden fixed inset-0 z-[69] bg-black/60 backdrop-blur-[2px]" onClick={closeRightPanel} />
 
             <aside
               className={[
                 "lg:hidden flex flex-col bg-[#0B1220] overflow-hidden border-l border-white/10",
                 "fixed inset-y-0 right-0 z-[70] w-[92vw] max-w-[520px] shadow-[0_40px_120px_rgba(0,0,0,0.65)]",
               ].join(" ")}
+              role="dialog"
+              aria-label="Right panel"
             >
-              <div className="flex-1 min-w-0 flex flex-col">
-                <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-10">
-                      {headerTab("documents", "Documents", "▦")}
-                      {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
-                    </div>
-
-                    <button
-                      className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
-                      onClick={closeRightPanel}
-                      aria-label="Close panel"
-                      type="button"
-                      title="Close"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className={[
-                        "h-full w-1/2 bg-blue-500 transition-transform duration-300",
-                        rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
-                      ].join(" ")}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
-                  {rightPanelTab === "documents" ? (
-                    <Document theme="audit" auditType="audit" auditId={null} />
-                  ) : (
-                    <Notification
-                      theme="audit"
-                      auditType="audit"
-                      auditId={null}
-                      onUnreadCountChange={setNotificationsCount}
-                    />
-                  )}
-                </div>
-              </div>
-            </aside>
-          </>
-        )}
-
-        {/* DESKTOP Docked Right Panel (match IAF pattern) */}
-        {rightPanelOpen && (
-          <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 border-l border-white/10 bg-[#0B1220] overflow-hidden">
-            <div className="flex-1 min-w-0 flex flex-col">
-              <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-10">
-                    {headerTab("documents", "Documents", "▦")}
-                    {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
-                  </div>
-
-                  <button
-                    className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
-                    onClick={closeRightPanel}
-                    aria-label="Close panel"
-                    type="button"
-                    title="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className={[
-                      "h-full w-1/2 bg-blue-500 transition-transform duration-300",
-                      rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
-                    ].join(" ")}
-                  />
-                </div>
-              </div>
+              <RightPanelHeader
+                rightPanelTab={rightPanelTab}
+                notificationsCount={notificationsCount}
+                headerTab={headerTab}
+                closeRightPanel={closeRightPanel}
+              />
 
               <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
                 {rightPanelTab === "documents" ? (
                   <Document theme="audit" auditType="audit" auditId={null} />
                 ) : (
-                  <Notification
-                    theme="audit"
-                    auditType="audit"
-                    auditId={null}
-                    onUnreadCountChange={setNotificationsCount}
-                  />
+                  <Notification theme="audit" auditType="audit" auditId={null} onUnreadCountChange={setNotificationsCount} />
+                )}
+              </div>
+            </aside>
+          </>
+        )}
+
+        {/* DESKTOP Right Panel (overlay, does NOT add width) */}
+        {rightPanelOpen && (
+          <aside
+            id="kgs-right-panel"
+            className="hidden lg:flex absolute inset-y-0 right-0 z-[50] border-l border-white/10 bg-[#0B1220] overflow-hidden"
+            style={{ width: desktopPanelW }}
+            aria-label="Right panel"
+          >
+            <div className="flex-1 min-w-0 flex flex-col">
+              <RightPanelHeader
+                rightPanelTab={rightPanelTab}
+                notificationsCount={notificationsCount}
+                headerTab={headerTab}
+                closeRightPanel={closeRightPanel}
+              />
+
+              <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
+                {rightPanelTab === "documents" ? (
+                  <Document theme="audit" auditType="audit" auditId={null} />
+                ) : (
+                  <Notification theme="audit" auditType="audit" auditId={null} onUnreadCountChange={setNotificationsCount} />
                 )}
               </div>
             </div>
@@ -736,17 +663,11 @@ export default function AuditSchedule() {
                 </ModalField>
 
                 <ModalField label="Qualification" error={memberErrors.qualification}>
-                  <Input
-                    value={memberDraft.qualification}
-                    onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))}
-                  />
+                  <Input value={memberDraft.qualification} onChange={(v) => setMemberDraft((p) => ({ ...p, qualification: v }))} />
                 </ModalField>
 
                 <ModalField label="Assigned process" error={memberErrors.assignedProcess}>
-                  <Input
-                    value={memberDraft.assignedProcess}
-                    onChange={(v) => setMemberDraft((p) => ({ ...p, assignedProcess: v }))}
-                  />
+                  <Input value={memberDraft.assignedProcess} onChange={(v) => setMemberDraft((p) => ({ ...p, assignedProcess: v }))} />
                 </ModalField>
               </div>
 
@@ -770,6 +691,46 @@ export default function AuditSchedule() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* -------------------------- Right panel header (shared) -------------------------- */
+function RightPanelHeader(props: {
+  rightPanelTab: RightPanelTab;
+  notificationsCount: number;
+  headerTab: (t: RightPanelTab, label: string, icon: string, badge?: number) => React.ReactNode;
+  closeRightPanel: () => void;
+}) {
+  const { headerTab, notificationsCount, closeRightPanel } = props;
+
+  return (
+    <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-10">
+          {headerTab("documents", "Documents", "▦")}
+          {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
+        </div>
+
+        <button
+          className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
+          onClick={closeRightPanel}
+          aria-label="Close panel"
+          type="button"
+          title="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+        <div
+          className={[
+            "h-full w-1/2 bg-blue-500 transition-transform duration-300",
+            props.rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
+          ].join(" ")}
+        />
+      </div>
     </div>
   );
 }
@@ -846,12 +807,7 @@ function ModalField({ label, error, children }: { label: string; error?: string;
   );
 }
 
-function Input(props: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: React.HTMLInputTypeAttribute;
-}) {
+function Input(props: { value: string; onChange: (v: string) => void; placeholder?: string; type?: React.HTMLInputTypeAttribute }) {
   const { value, onChange, placeholder, type } = props;
   return (
     <input
@@ -901,11 +857,7 @@ function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNo
         ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
         : "border-white/10 bg-white/5 text-slate-200/80";
 
-  return (
-    <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>
-      {children}
-    </span>
-  );
+  return <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>{children}</span>;
 }
 
 function StatusPill({ status }: { status: ChecklistItem["status"] }) {
@@ -916,9 +868,5 @@ function StatusPill({ status }: { status: ChecklistItem["status"] }) {
         ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
         : "border-slate-400/20 bg-white/5 text-slate-300/80";
 
-  return (
-    <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>
-      {status}
-    </span>
-  );
+  return <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>{status}</span>;
 }

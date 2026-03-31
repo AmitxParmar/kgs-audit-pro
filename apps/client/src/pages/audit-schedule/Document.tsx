@@ -146,7 +146,6 @@ export default function Document({
       for (const file of list) {
         const fileName = safeFileName(file.name);
 
-        console.time(`upload:${fileName}:insert`);
         const { data: inserted, error: insertErr } = await raceTimeout(
           supabase
             .from("audit_documents")
@@ -165,13 +164,11 @@ export default function Document({
           15000,
           "DB insert"
         );
-        console.timeEnd(`upload:${fileName}:insert`);
 
         if (insertErr || !inserted) throw new Error(insertErr?.message ?? "Failed to insert document row");
 
         const storagePath = `public/${auditType}/${auditId ?? "global"}/${inserted.id}/${fileName}`;
 
-        console.time(`upload:${fileName}:storage`);
         const uploadRes = await raceTimeout(
           supabase.storage.from("audit-documents").upload(storagePath, file, {
             contentType: file.type || undefined,
@@ -180,17 +177,14 @@ export default function Document({
           60000,
           "Storage upload"
         );
-        console.timeEnd(`upload:${fileName}:storage`);
 
         if (uploadRes.error) throw new Error(uploadRes.error.message);
 
-        console.time(`upload:${fileName}:update`);
         const { error: updErr } = await raceTimeout(
           supabase.from("audit_documents").update({ storage_path: storagePath }).eq("id", inserted.id),
           15000,
           "DB update"
         );
-        console.timeEnd(`upload:${fileName}:update`);
 
         if (updErr) throw new Error(updErr.message);
       }
@@ -234,7 +228,7 @@ export default function Document({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 w-full space-y-4">
       <input
         ref={inputRef}
         type="file"
@@ -246,24 +240,25 @@ export default function Document({
         }}
       />
 
-      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.03] p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold text-slate-300/90">Documents</div>
-          <div className="text-sm font-extrabold text-slate-100">{docs.length} items</div>
+      <div className="min-w-0 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.03] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-slate-300/90 truncate">Documents</div>
+          <div className="text-sm font-extrabold text-slate-100 shrink-0">{docs.length} items</div>
         </div>
         <div className="mt-3 h-2 rounded-full bg-black/30 border border-white/10 overflow-hidden">
           <div className={`h-full ${t.accentBar}`} style={{ width: "100%" }} />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 relative">
+      {/* Search + Upload: allow wrapping so it never overflows the panel */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+        <div className="flex-1 relative min-w-0">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔎</span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={[
-              "h-10 w-full rounded-xl border border-white/10 bg-black/20 pl-10 pr-3 text-slate-100 placeholder:text-slate-600 outline-none",
+              "h-10 w-full min-w-0 rounded-xl border border-white/10 bg-black/20 pl-10 pr-3 text-slate-100 placeholder:text-slate-600 outline-none",
               "focus:ring-2",
               t.focusRing,
             ].join(" ")}
@@ -272,7 +267,7 @@ export default function Document({
         </div>
 
         <button
-          className={`h-10 px-4 rounded-xl border transition font-extrabold ${t.accentBtn} disabled:opacity-50`}
+          className={`h-10 px-4 rounded-xl border transition font-extrabold ${t.accentBtn} disabled:opacity-50 shrink-0`}
           type="button"
           onClick={pickUpload}
           disabled={uploading}
@@ -287,9 +282,10 @@ export default function Document({
         </div>
       )}
 
+      {/* Drag area is safe in narrow panel */}
       <div
         className={[
-          "rounded-2xl border border-dashed bg-black/10 px-6 py-10 text-center transition",
+          "min-w-0 rounded-2xl border border-dashed bg-black/10 px-4 sm:px-6 py-8 sm:py-10 text-center transition",
           dragOver ? "border-white/30 bg-white/5" : "border-white/15",
         ].join(" ")}
         onDragEnter={(e) => {
@@ -319,28 +315,30 @@ export default function Document({
       >
         <div className="text-3xl text-slate-400">📎</div>
         <div className="mt-3 font-semibold text-slate-300/90">Drop files here or click to browse</div>
-        <div className="mt-1 text-xs text-slate-500">Supabase Storage bucket must exist: audit-documents</div>
+        <div className="mt-1 text-xs text-slate-500 break-words">
+          Supabase Storage bucket must exist: audit-documents
+        </div>
       </div>
 
-      <div className="pt-2">
-        <div className="flex items-center justify-between">
-          <div className="text-xs font-extrabold tracking-widest text-slate-500">FILES</div>
-          <div className="text-xs text-slate-500">
+      <div className="pt-2 min-w-0">
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div className="text-xs font-extrabold tracking-widest text-slate-500 shrink-0">FILES</div>
+          <div className="text-xs text-slate-500 min-w-0">
             <span className="inline-flex items-center h-6 px-2 rounded-full border border-white/10 bg-white/5">
               {loading ? "Loading..." : `Showing ${filtered.length} of ${docs.length}`}
             </span>
           </div>
         </div>
 
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2 min-w-0">
           {!loading &&
             filtered.map((d) => (
               <div
                 key={d.id}
-                className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] px-4 py-3 flex items-center justify-between gap-3"
+                className="min-w-0 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] px-4 py-3 flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`h-11 w-11 rounded-xl grid place-items-center border ${t.tileBg}`}>📄</div>
+                  <div className={`h-11 w-11 rounded-xl grid place-items-center border ${t.tileBg} shrink-0`}>📄</div>
                   <div className="min-w-0">
                     <div className="font-bold text-slate-100 truncate">{d.file_name}</div>
                     <div className="text-xs text-slate-500 truncate">

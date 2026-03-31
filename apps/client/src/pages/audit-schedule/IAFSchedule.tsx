@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import KgsSidebar from "./KGSSidebar";
 import Document from "./Document";
 import Notification from "./Notification";
 
@@ -54,8 +53,6 @@ export default function IafSchedule() {
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState<CollapsedSections>({
     details: false,
@@ -64,11 +61,9 @@ export default function IafSchedule() {
     checklist: false,
   });
 
-  // Docked right panel
+  // Right panel
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
-
-  // ✅ Dynamic unread notifications badge (replaces hardcoded 4)
   const [notificationsCount, setNotificationsCount] = useState(0);
 
   const [form, setForm] = useState<FormState>({
@@ -151,7 +146,7 @@ export default function IafSchedule() {
     setAutoSavedAt(new Date());
   };
 
-  // -------- Add Team Member modal state --------
+  // Add Team Member modal state
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [memberDraft, setMemberDraft] = useState<MemberDraft>({
     name: "",
@@ -162,12 +157,7 @@ export default function IafSchedule() {
   const [memberErrors, setMemberErrors] = useState<MemberErrors>({});
 
   const openAddMember = () => {
-    setMemberDraft({
-      name: "",
-      role: "Assessor",
-      qualification: "",
-      assignedArea: "",
-    });
+    setMemberDraft({ name: "", role: "Assessor", qualification: "", assignedArea: "" });
     setMemberErrors({});
     setAddMemberOpen(true);
   };
@@ -201,17 +191,27 @@ export default function IafSchedule() {
     setAddMemberOpen(false);
   };
 
-  const openDocs = () => {
-    setRightPanelTab("documents");
+  // ------------------ Right panel controls (same as AuditSchedule fix) ------------------
+  const openRightPanel = (tab: RightPanelTab) => {
+    setRightPanelTab(tab);
     setRightPanelOpen(true);
   };
-
-  const openNotifs = () => {
-    setRightPanelTab("notifications");
-    setRightPanelOpen(true);
-  };
-
+  const openDocs = () => openRightPanel("documents");
+  const openNotifs = () => openRightPanel("notifications");
   const closeRightPanel = () => setRightPanelOpen(false);
+  const toggleRightPanel = () => setRightPanelOpen((v) => !v);
+
+  // ESC closes panel
+  useEffect(() => {
+    if (!rightPanelOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeRightPanel();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [rightPanelOpen]);
 
   const headerTab = (t: RightPanelTab, label: string, icon: string, badge?: number) => {
     const active = rightPanelTab === t;
@@ -236,9 +236,11 @@ export default function IafSchedule() {
     );
   };
 
+  const desktopPanelW = "min(480px,35vw)";
+
   return (
-    <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
-      {/* Force dark inputs even on focus/autofill (prevents white fields) */}
+    <div className="h-full w-full text-slate-200 flex overflow-hidden overflow-x-hidden bg-[#0B1220]">
+      {/* Keep your input styling */}
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
@@ -259,37 +261,17 @@ export default function IafSchedule() {
         input.kgs-field[type="date"] { color-scheme: dark; }
       `}</style>
 
-      <KgsSidebar
-        sidebarCollapsed={sidebarCollapsed}
-        mobileSidebarOpen={mobileSidebarOpen}
-        setMobileSidebarOpen={setMobileSidebarOpen}
-      />
-
-      {/* MAIN + RIGHT PANEL WRAPPER */}
-      <div className="flex-1 min-w-0 flex overflow-hidden">
-        <main className="flex-1 min-w-0 flex flex-col">
+      {/* Wrapper is relative so desktop panel can overlay without changing layout width */}
+      <div className="relative flex-1 min-w-0 w-full flex overflow-hidden">
+        <main
+          className={[
+            "flex-1 min-w-0 flex flex-col transition-[padding] duration-200",
+            rightPanelOpen ? `lg:pr-[${desktopPanelW}]` : "lg:pr-0",
+          ].join(" ")}
+        >
           {/* Topbar */}
           <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
-                onClick={() => setMobileSidebarOpen(true)}
-                aria-label="Open sidebar"
-                type="button"
-              >
-                ☰
-              </button>
-
-              <button
-                className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                aria-label="Toggle sidebar collapse"
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                type="button"
-              >
-                {sidebarCollapsed ? "»" : "«"}
-              </button>
-
               <div className="text-sm text-slate-400/90 truncate">
                 {breadcrumbs.map((b, idx) => (
                   <span key={b} className="whitespace-nowrap">
@@ -301,6 +283,8 @@ export default function IafSchedule() {
             </div>
 
             <div className="flex items-center gap-2">
+              
+
               <button
                 className="h-9 px-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
                 type="button"
@@ -321,11 +305,6 @@ export default function IafSchedule() {
                   </span>
                 )}
               </button>
-
-              <div className="h-9 px-3 rounded-full border border-white/10 bg-white/5 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-rose-400" />
-                <span className="font-extrabold text-sm">RK</span>
-              </div>
             </div>
           </header>
 
@@ -376,18 +355,13 @@ export default function IafSchedule() {
                         isCompleted
                           ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
                           : isActive
-                          ? "border-amber-400/30 bg-amber-500/20 text-amber-200"
-                          : "border-white/10 bg-white/5 text-slate-500",
+                            ? "border-amber-400/30 bg-amber-500/20 text-amber-200"
+                            : "border-white/10 bg-white/5 text-slate-500",
                       ].join(" ")}
                     >
                       {isCompleted ? "✓" : i + 1}
                     </span>
-                    <span
-                      className={[
-                        "text-sm font-extrabold",
-                        isActive ? "text-slate-100" : "text-slate-500",
-                      ].join(" ")}
-                    >
+                    <span className={["text-sm font-extrabold", isActive ? "text-slate-100" : "text-slate-500"].join(" ")}>
                       {s}
                     </span>
                     {i < steps.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
@@ -590,51 +564,60 @@ export default function IafSchedule() {
           </footer>
         </main>
 
-        {/* Docked Right Panel (reduced width) */}
+        {/* MOBILE Right Panel Drawer */}
         {rightPanelOpen && (
-          <aside className="hidden lg:flex w-[420px] xl:w-[480px] shrink-0 border-l border-white/10 bg-[#0B1220] overflow-hidden">
-            <div className="flex-1 min-w-0 flex flex-col">
-              {/* tabs header */}
-              <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-10">
-                    {headerTab("documents", "Documents", "▦")}
-                    {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
-                  </div>
+          <>
+            <div className="lg:hidden fixed inset-0 z-[69] bg-black/60 backdrop-blur-[2px]" onClick={closeRightPanel} />
 
-                  <button
-                    className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
-                    onClick={closeRightPanel}
-                    aria-label="Close panel"
-                    type="button"
-                    title="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
+            <aside
+              className={[
+                "lg:hidden flex flex-col bg-[#0B1220] overflow-hidden border-l border-white/10",
+                "fixed inset-y-0 right-0 z-[70] w-[92vw] max-w-[520px] shadow-[0_40px_120px_rgba(0,0,0,0.65)]",
+              ].join(" ")}
+              role="dialog"
+              aria-label="Right panel"
+            >
+              <RightPanelHeader
+                rightPanelTab={rightPanelTab}
+                notificationsCount={notificationsCount}
+                headerTab={headerTab}
+                closeRightPanel={closeRightPanel}
+                accentBarClass="bg-[#F3A300]"
+              />
 
-                {/* underline indicator */}
-                <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className={[
-                      "h-full w-1/2 bg-[#F3A300] transition-transform duration-300",
-                      rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
-                    ].join(" ")}
-                  />
-                </div>
-              </div>
-
-              {/* scroll body */}
               <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
                 {rightPanelTab === "documents" ? (
                   <Document theme="iaf" auditType="iaf" auditId={null} />
                 ) : (
-                  <Notification
-                    theme="iaf"
-                    auditType="iaf"
-                    auditId={null}
-                    onUnreadCountChange={setNotificationsCount}
-                  />
+                  <Notification theme="iaf" auditType="iaf" auditId={null} onUnreadCountChange={setNotificationsCount} />
+                )}
+              </div>
+            </aside>
+          </>
+        )}
+
+        {/* DESKTOP Right Panel (overlay, does NOT add width) */}
+        {rightPanelOpen && (
+          <aside
+            id="kgs-right-panel"
+            className="hidden lg:flex absolute inset-y-0 right-0 z-[50] border-l border-white/10 bg-[#0B1220] overflow-hidden"
+            style={{ width: desktopPanelW }}
+            aria-label="Right panel"
+          >
+            <div className="flex-1 min-w-0 flex flex-col">
+              <RightPanelHeader
+                rightPanelTab={rightPanelTab}
+                notificationsCount={notificationsCount}
+                headerTab={headerTab}
+                closeRightPanel={closeRightPanel}
+                accentBarClass="bg-[#F3A300]"
+              />
+
+              <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
+                {rightPanelTab === "documents" ? (
+                  <Document theme="iaf" auditType="iaf" auditId={null} />
+                ) : (
+                  <Notification theme="iaf" auditType="iaf" auditId={null} onUnreadCountChange={setNotificationsCount} />
                 )}
               </div>
             </div>
@@ -715,7 +698,49 @@ export default function IafSchedule() {
   );
 }
 
-/* ------------------------------ Reusable UI (same as earlier) ------------------------------ */
+/* -------------------------- Right panel header (shared) -------------------------- */
+function RightPanelHeader(props: {
+  rightPanelTab: RightPanelTab;
+  notificationsCount: number;
+  headerTab: (t: RightPanelTab, label: string, icon: string, badge?: number) => React.ReactNode;
+  closeRightPanel: () => void;
+  accentBarClass: string;
+}) {
+  const { headerTab, notificationsCount, closeRightPanel, accentBarClass, rightPanelTab } = props;
+
+  return (
+    <div className="px-6 pt-5 pb-2 border-b border-white/10 bg-black/10">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-10">
+          {headerTab("documents", "Documents", "▦")}
+          {headerTab("notifications", "Notifications", "🔔", notificationsCount)}
+        </div>
+
+        <button
+          className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center text-slate-300"
+          onClick={closeRightPanel}
+          aria-label="Close panel"
+          type="button"
+          title="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-3 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+        <div
+          className={[
+            "h-full w-1/2 transition-transform duration-300",
+            accentBarClass,
+            rightPanelTab === "documents" ? "translate-x-0" : "translate-x-full",
+          ].join(" ")}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ Reusable UI ------------------------------ */
 
 function Card(props: {
   title: string;
@@ -726,6 +751,7 @@ function Card(props: {
   children: React.ReactNode;
 }) {
   const { title, subtitle, icon, collapsed, onToggle, children } = props;
+
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden">
       <div className="px-5 py-4 flex items-center justify-between border-b border-white/10 bg-black/10">
@@ -780,12 +806,7 @@ function ModalField({ label, error, children }: { label: string; error?: string;
   );
 }
 
-function Input(props: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: React.HTMLInputTypeAttribute;
-}) {
+function Input(props: { value: string; onChange: (v: string) => void; placeholder?: string; type?: React.HTMLInputTypeAttribute }) {
   const { value, onChange, placeholder, type } = props;
   return (
     <input
@@ -827,32 +848,24 @@ function Select(props: { value: string; onChange: (v: string) => void; options: 
   );
 }
 
-function RoleBadge({ tone, children }: { tone: "amber" | "slate" | "teal"; children: React.ReactNode }) {
+function RoleBadge({ tone, children }: { tone: TeamTone; children: React.ReactNode }) {
   const toneCls =
     tone === "amber"
       ? "border-amber-500/30 bg-amber-500/15 text-amber-200"
       : tone === "teal"
-      ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
-      : "border-white/10 bg-white/5 text-slate-200/80";
+        ? "border-teal-400/30 bg-teal-400/10 text-teal-200"
+        : "border-white/10 bg-white/5 text-slate-200/80";
 
-  return (
-    <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>
-      {children}
-    </span>
-  );
+  return <span className={`inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${toneCls}`}>{children}</span>;
 }
 
-function StatusPill({ status }: { status: "Done" | "Required" | "Optional" }) {
+function StatusPill({ status }: { status: ChecklistItem["status"] }) {
   const cls =
     status === "Done"
       ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
       : status === "Required"
-      ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
-      : "border-slate-400/20 bg-white/5 text-slate-300/80";
+        ? "border-rose-400/25 bg-rose-400/10 text-rose-200"
+        : "border-slate-400/20 bg-white/5 text-slate-300/80";
 
-  return (
-    <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>
-      {status}
-    </span>
-  );
+  return <span className={`shrink-0 inline-flex items-center h-6 px-2 rounded-full border text-xs font-bold ${cls}`}>{status}</span>;
 }
