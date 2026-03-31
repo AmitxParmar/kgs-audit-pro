@@ -25,12 +25,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-<<<<<<< Updated upstream
-    storageKey:        'kgs-audit-pro-auth',
-  }
-})
-=======
+
     storageKey: "kgs-audit-pro-auth",
   },
 });
->>>>>>> Stashed changes
