@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { QueryClient, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { authService, AuthUser } from '../lib/auth'
 
 interface AuthContextValue {
@@ -33,7 +33,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
     initAuth()
 
-    // ✅ Only ONE subscription, ever
+    // Only ONE subscription for the entire app
     const { data } = authService.onAuthStateChange((authUser) => {
       if (!mounted) return
       setUser(authUser)
@@ -54,7 +54,6 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// ✅ This replaces useAuth's state/effect — just reads from context
 export function useAuthContext() {
   return useContext(AuthContext)
 }
