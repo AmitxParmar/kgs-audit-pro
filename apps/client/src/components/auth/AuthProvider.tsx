@@ -10,22 +10,21 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const { isLoading } = useAuth()
-
-  useEffect(() => {
-    // Auth state is handled by the useAuth hook
-  }, [])
-
-  if (isLoading) {
+  
+  // Don't block public routes
+  const PUBLIC_PATHS = ['/audit-schedule', '/iaf-schedule', '/login', '/reset-password']
+  const isPublic = PUBLIC_PATHS.includes(window.location.pathname)
+  
+  if (isLoading && !isPublic) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
-
+  
   return <>{children}</>
 }
-
 
 interface RoleRouteProps {
   children: ReactNode
