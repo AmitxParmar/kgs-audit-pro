@@ -4,7 +4,7 @@ export interface AuthUser {
   id: string
   email: string
   name?: string
-  user_role?: 'super_admin' | 'cb_admin' ...  // ← second uses 'user_role'
+  role?: 'super_admin' | 'cb_admin' | 'lead_auditor' | 'auditor' | 'staff' | 'accreditation_manager'
   cb_id?: string
 }
 
@@ -95,6 +95,15 @@ export const authService = {
 
 getSession: async (): Promise<AuthUser | null> => {
   try {
+    
+    const { data: profile, error: profileError } = await supabase
+  .from('users')
+  .select('role, cb_id, full_name')
+  .eq('id', session.user.id)
+  .maybeSingle()
+
+console.log('PROFILE:', profile)
+console.log('PROFILE ERROR:', profileError)  // ← this will tell you exactly if it's RLS
     const { data: { session }, error } = await supabase.auth.getSession()
 
     console.log("SESSION:", session)
