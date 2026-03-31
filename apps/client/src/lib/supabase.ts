@@ -21,3 +21,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'kgs-audit-pro-auth',
   },
 });
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed OK')
+  }
+})
+
+supabase.auth.getSession().catch(() => {
+  console.warn('Session check failed — clearing stored session')
+  supabase.auth.signOut()
+})
