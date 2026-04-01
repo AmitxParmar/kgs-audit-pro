@@ -1,73 +1,30 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { authService, AuthUser } from '../lib/auth'
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useAuthContext } from '../context/AuthContext'
 
 export function useAuth() {
-  const queryClient               = useQueryClient()
-  const navigate                  = useNavigate()
-  const [user, setUser]           = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, isLoading } = useAuthContext()
+  const queryClient = useQueryClient()
 
-useEffect(() => {
-  let mounted = true
-
-  const initAuth = async () => {
-    try {
-      const sessionUser = await authService.getSession()
-
-      if (!mounted) return
-
-      setUser(sessionUser)
-      queryClient.setQueryData(['auth', 'user'], sessionUser)
-    } catch (err) {
-      console.error('Auth init error:', err)
-    } finally {
-      if (mounted) setIsLoading(false)
-    }
-  }
-
-  initAuth()
-
-  const { data } = authService.onAuthStateChange((authUser) => {
-    if (!mounted) return
-
-    setUser(authUser)
-    setIsLoading(false)
-    queryClient.setQueryData(['auth', 'user'], authUser)
-  })
-
-  const subscription = data.subscription
-
-  return () => {
-    mounted = false
-    subscription.unsubscribe()
-  }
-}, [queryClient])
-
-  // ── Login ─────────────────────────────────────────────────────────────────
-  // mutationFn returns the full Supabase data object so AuthForm can
-  // read data.session and navigate immediately — no race condition
+  // ── Login ──────────────────────────────────────────────────────────────
   const loginMutation = useMutation({
-    mutationFn: authService.login,          // returns { user, session }
+    mutationFn: authService.login,
     onSuccess: (data) => {
       if (data.user) {
         const authUser: AuthUser = {
           id:    data.user.id,
           email: data.user.email!,
           name:  data.user.user_metadata?.name,
-          role:  data.user.user_metadata?.role,   // role comes via onAuthStateChange
+          role:  data.user.user_metadata?.role,
         }
-        setUser(authUser)
-        setIsLoading(false)
         queryClient.setQueryData(['auth', 'user'], authUser)
       }
     },
   })
 
-  // ── Signup ────────────────────────────────────────────────────────────────
+  // ── Signup ─────────────────────────────────────────────────────────────
   const signupMutation = useMutation({
-    mutationFn: authService.signup,         // returns { user, session }
+    mutationFn: authService.signup,
     onSuccess: (data) => {
       if (data.user && data.session) {
         const authUser: AuthUser = {
@@ -75,8 +32,7 @@ useEffect(() => {
           email: data.user.email!,
           name:  data.user.user_metadata?.name,
         }
-        setUser(authUser)
-        setIsLoading(false)
+        queryClient.setQueryData(['auth', 'user'], authUser)
       }
     },
   })
@@ -87,8 +43,6 @@ useEffect(() => {
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      setUser(null)
-      setIsLoading(false)
       queryClient.clear()
     },
   })
@@ -96,8 +50,8 @@ useEffect(() => {
   return {
     user,
     isLoading,
-    login:               loginMutation.mutateAsync,   // returns data to caller
-    signup:              signupMutation.mutateAsync,  // returns data to caller
+    login:               loginMutation.mutateAsync,
+    signup:              signupMutation.mutateAsync,
     resetPassword:       resetPasswordMutation.mutateAsync,
     updatePassword:      updatePasswordMutation.mutateAsync,
     logout:              logoutMutation.mutateAsync,

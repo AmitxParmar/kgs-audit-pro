@@ -19,46 +19,6 @@ function App() {
 
         <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-<<<<<<< HEAD
-      
-
-        {/* Public */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-
-        {/* ✅ FULL PAGE (NO SIDEBAR) */}
-        <Route
-          path="/clients/onboard"
-          element={
-            <ProtectedRoute>
-              <ClientOnboarding />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ✅ SIDEBAR LAYOUT */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppShell />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/clients" element={<ClientsPage />} />
-
-          <Route
-            path="/admin/*"
-            element={
-              <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
-                <AdminRoutes />
-              </RoleRoute>
-            }
-          />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-=======
         {/* Auth pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -94,7 +54,6 @@ function App() {
             </ProtectedRoute>
           }
         />
->>>>>>> d440002f (UI OF IATF AND IAF)
       </Routes>
     </div>
   );
