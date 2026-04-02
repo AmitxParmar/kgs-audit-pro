@@ -1,42 +1,102 @@
-import { Request, Response } from 'express';
-import { AuthenticatedRequest } from '../../middleware/auth';
-import { clientService } from './service';
+import { Request, Response } from 'express'
+import { AuthenticatedRequest } from '../../middleware/auth'
+import { clientService } from './service'
+import { supabase } from '../../config/supabase'
 
 export const getClients = async (req: Request, res: Response) => {
   try {
-    const clients = await clientService.getClients();
-    res.json(clients);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch clients' });
+    
+
+   const { data, error } = await supabase
+  .from('clients')
+  .select(`
+    *,
+    application_master (
+      application_type,
+      status
+    )
+  `)
+  .order('onboarded_at', { ascending: false });
+
+    if (error) {
+      
+      throw error;
+    }
+
+    
+
+    res.json(data);
+  } catch (error: any) {
+   
+    res.status(500).json({ error: error.message });
   }
 };
 
-export const createClient = async (req: AuthenticatedRequest, res: Response) => {
+export const createClient = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const client = await clientService.createClient(req.body, req.user!.id)
-    console.log(' Client created:', client) 
-    res.status(201).json(client)
+    
+
+    const userId = req.user.id;
+    const cb_id = req.user.cb_id;
+
+    const result = await clientService.createClient(
+      req.body,
+      userId,
+      cb_id
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Client onboarded successfully',
+      data: result,
+    });
   } catch (error: any) {
-    console.error(' CREATE CLIENT ERROR:', error) 
-    res.status(500).json({ error: 'Failed to create client', details: error.message || error })
+    res.status(500).json({
+      success: false,
+      message: 'Failed to onboard client',
+      error: error.message,
+    });
+  }
+};
+
+
+// ✅ GET CLIENT BY ID
+export const getClientById = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', req.params.id)
+      .single()
+
+    if (error) throw error
+
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
   }
 }
 
-export const getClientById = async (req: Request, res: Response) => {
+// ✅ UPDATE CLIENT
+export const updateClient = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const client = await clientService.getClientById(req.params.id);
-    if (!client) return res.status(404).json({ error: 'Client not found' });
-    res.json(client);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch client' });
-  }
-};
+    const { data, error } = await supabase
+      .from('clients')
+      .update(req.body)
+      .eq('id', req.params.id)
+      .select()
+      .single()
 
-export const updateClient = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const client = await clientService.updateClient(req.params.id, req.body);
-    res.json(client);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update client' });
+    if (error) throw error
+
+    res.json(data)
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
   }
-};
+}

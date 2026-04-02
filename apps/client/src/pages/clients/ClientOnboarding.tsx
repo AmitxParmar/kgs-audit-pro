@@ -30,7 +30,8 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
-
+import { clientOnboardingService } from "@/services/clientOnboardingService";
+import { authService } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const RequiredLabel = ({ text }: { text: string }) => (
@@ -390,204 +391,47 @@ export default function ClientOnboardingIATF({
     setApp({ ...app, other_oem_customers: updated });
   };
 
-  // const handleSubmit = async () => {
-  //   const missingFields: string[] = [];
 
-  //   if (!app.type_of_audit) missingFields.push("Type of Audit");
-  //   if (app.applicable_standards.length === 0)
-  //     missingFields.push("Applicable Standards");
-  //   if (!app.product_design_responsibility)
-  //     missingFields.push("Product Design Responsibility");
-  //   if (!client.organization_name) missingFields.push("Organization Name");
-  //   if (!client.registration_site_address)
-  //     missingFields.push("Manufacturing Site Address");
-  //   if (!app.proposed_scope) missingFields.push("Proposed Scope");
-  //   if (!app.outsourced_processes) missingFields.push("Outsourced Processes");
-  //   if (!attachment) missingFields.push("Supporting Document");
+ const handleSubmit = async () => {
+  try {
+    setLoading(true);
 
-  //   if (contacts.length === 0) {
-  //     missingFields.push("At least one contact");
-  //   } else {
-  //     contacts.forEach((c, i) => {
-  //       if (!c.name.trim()) missingFields.push(`Contact ${i + 1} Name`);
-  //       if (!c.designation.trim())
-  //         missingFields.push(`Contact ${i + 1} Designation`);
-  //       if (!c.phone.trim()) missingFields.push(`Contact ${i + 1} Phone`);
-  //       if (!c.email.trim()) missingFields.push(`Contact ${i + 1} Email`);
-  //     });
-  //   }
+    const user = await authService.getCurrentUser();
 
-  //   if (missingFields.length > 0) {
-  //     toast.error(
-  //       <div className="space-y-1">
-  //         <p>Please fill all the following mandatory fields:</p>
-  //         <ul className="list-disc ml-5 text-sm">
-  //           {missingFields.map((f, idx) => (
-  //             <li key={idx}>{f}</li>
-  //           ))}
-  //         </ul>
-  //       </div>,
-  //     );
-  //     return;
-  //   }
+    if (!user) {
+      toast.error("User not authenticated");
+      return;
+    }
 
-  //   try {
-  //     setLoading(true);
+   const payload = {
+  name: client.organization_name,
+  contact_name: contacts[0]?.name,
+  contact_email: contacts[0]?.email,
+  contact_phone: contacts[0]?.phone,
+  address: client.mailing_address,
+  website: client.website,
+  industry: app.applicable_standards.join(", "),
 
-  //     let finalApplicationId = applicationId;
+  
+  application_type: applicationType, // "IATF" or "IAF"
 
-  //     const client_code = generateClientCode(client.organization_name);
+  
 
-  //     let clientRow;
+  manufacturing_sites: app.manufacturing_sites,
+  remote_locations: app.manufacturing_sites[0]?.remote_locations || [],
+};
 
-  //     // =========================
-  //     // CREATE CLIENT (ONLY IF NEW APPLICATION)
-  //     // =========================
-  //     if (!applicationId) {
-  //       const { data, error } = await supabase
-  //         .from("clients")
-  //         .insert({
-  //           company_name: client.organization_name,
-  //           contact_name: contacts[0].name,
-  //           contact_email: contacts[0].email,
-  //           contact_phone: contacts[0].phone,
-  //           title: contacts[0].designation,
-  //           address: client.mailing_address || null,
-  //           fax: client.fax || null,
-  //           website: client.website || null,
-  //           client_code,
-  //           created_by: currentUserId,
-  //           assigned_to: currentUserId,
-  //           created_date: new Date(),
-  //         })
-  //         .select("id, client_code")
-  //         .single();
+    const res = await clientOnboardingService.create(payload);
 
-  //       if (error) throw error;
-  //       clientRow = data;
-  //     }
+    toast.success("Client onboarded successfully");
 
-  //     const attachment_url = await uploadAttachment(
-  //       clientRow?.client_code || client_code,
-  //     );
-
-  //     const appPayload = {
-  //       client_id: clientRow?.id,
-  //       standard: app.applicable_standards.join(", "),
-  //       type_of_audit: app.type_of_audit,
-  //       product_design_responsibility: app.product_design_responsibility,
-  //       manufacturing_sites: app.manufacturing_sites,
-  //       proposed_scope: app.proposed_scope,
-  //       outsourced_processes: app.outsourced_processes,
-  //       shifts: app.shifts,
-  //       working_days: app.working_days,
-  //       iaf_code: app.iaf_code,
-  //       nace_code: app.nace_code,
-  //       sic_code: app.sic_code,
-  //       languages_spoken: app.languages_spoken,
-  //       automotive_percentage: app.automotive_percentage
-  //         ? safeInt(app.automotive_percentage)
-  //         : null,
-  //       legal_obligations: app.legal_obligations,
-  //       legal_obligation_details: app.legal_obligation_details,
-  //       previous_iatf_certified: app.previous_iatf_certified,
-  //       has_iatf_oem_customers: app.has_iatf_oem_customers,
-  //       iatf_oem_customers: app.has_iatf_oem_customers
-  //         ? app.iatf_oem_customers.filter((o) => o.selected)
-  //         : [],
-  //       has_other_oem_customers: app.has_other_oem_customers,
-  //       other_oem_customers: app.has_other_oem_customers
-  //         ? app.other_oem_customers.filter((o) => o.OEM && o.name)
-  //         : [],
-  //       attachment_url,
-  //       status: applicationId ? "application_review" : "pending",
-  //       last_action_role: "client",
-  //       updated_at: new Date().toISOString(),
-  //     };
-
-  //     // =========================
-  //     // UPDATE EXISTING APPLICATION
-  //     // =========================
-  //     if (applicationId) {
-  //       const { error: updateErr } = await supabase
-  //         .from("application_master")
-  //         .update(appPayload)
-  //         .eq("application_id", applicationId);
-
-  //       if (updateErr) throw updateErr;
-
-  //       // UPSERT CONTACTS
-  //       for (const c of contacts) {
-  //         await supabase.from("Contacts").upsert(
-  //           {
-  //             application_id: applicationId,
-  //             Name: c.name,
-  //             Designation: c.designation,
-  //             Phone: c.phone ? Number(c.phone) : null,
-  //             Email: c.email,
-  //           },
-  //           { onConflict: ["Email"] },
-  //         );
-  //       }
-
-  //       toast.success("Application updated successfully");
-  //     }
-
-  //     // =========================
-  //     // INSERT NEW APPLICATION
-  //     // =========================
-  //     else {
-  //       const { data: newApp, error: insertErr } = await supabase
-  //         .from("application_master")
-  //         .insert(appPayload)
-  //         .select("application_id")
-  //         .single();
-
-  //       if (insertErr) throw insertErr;
-
-  //       finalApplicationId = newApp.application_id;
-
-  //       const contactsPayload = contacts.map((c) => ({
-  //         application_id: finalApplicationId,
-  //         Name: c.name,
-  //         Designation: c.designation,
-  //         Phone: c.phone ? Number(c.phone) : null,
-  //         Email: c.email,
-  //       }));
-
-  //       await supabase.from("Contacts").insert(contactsPayload);
-
-  //       toast.success("IATF Application Submitted");
-  //     }
-
-  //     navigate(`/onboarding/success?appId=${finalApplicationId}`);
-  //   } catch (err: any) {
-  //     toast.error(err.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
-  const handleSubmit = async () => {
-  const applicationData = {
-    id: Date.now(),
-    type: applicationType, // ⭐ THIS IS KEY
-    client,
-    contacts,
-    app,
-  };
-
-  const existingApps =
-    JSON.parse(localStorage.getItem("applications") || "[]");
-
-  const updatedApps = [...existingApps, applicationData];
-
-  localStorage.setItem("applications", JSON.stringify(updatedApps));
-
-  toast.success("Application stored sucessfully");
-
-  navigate("/client-page");
+  navigate(`/clients`);
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message);
+  } finally {
+    setLoading(false);
+  }
 };
 
   const confirmScopeChange = async () => {
@@ -708,7 +552,7 @@ export default function ClientOnboardingIATF({
   }, [applicationId]);
 
   return (
-  <div className="min-h-screen py-10 px-4 flex justify-center bg-gray-900 text-white">
+  <div className="min-h-screen py-10 px-4 flex justify-center bg-gradient-to-b from-slate-950 to-slate-950/80 text-white">
       <div className="w-full max-w-6xl space-y-8">
        
         <Card className="bg-card border border-border shadow-sm rounded-2xl">
@@ -826,11 +670,11 @@ export default function ClientOnboardingIATF({
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid  grid-cols-2 gap-6">
               <div >
                 <RequiredLabel text="Organization Name" />
                 <Input
-               className=""
+               className="hover:text-black"
                   value={client.organization_name}
                   onChange={(e) =>
                     setClient({ ...client, organization_name: e.target.value })
@@ -841,6 +685,7 @@ export default function ClientOnboardingIATF({
               <div>
                 <label className="text-sm font-medium">Website</label>
                 <Input
+                className="hover:text-black"
                   value={client.website}
                   onChange={(e) =>
                     setClient({ ...client, website: e.target.value })
@@ -882,6 +727,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Name" />
                     <Input
+                    className="hover:text-black"
                       required
                       value={c.name}
                       onChange={(e) =>
@@ -893,6 +739,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Designation" />
                     <Input
+                     className="hover:text-black"
                       required
                       value={c.designation}
                       onChange={(e) =>
@@ -906,6 +753,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Phone" />
                     <Input
+                     className="hover:text-black"
                       required
                       value={c.phone}
                       onChange={(e) =>
@@ -917,6 +765,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Email" />
                     <Input
+                     className="hover:text-black"
                       required
                       type="email"
                       value={c.email}
@@ -965,6 +814,7 @@ export default function ClientOnboardingIATF({
                 {app.manufacturing_sites.map((site, index) => (
                   <div key={index} className="border p-5 rounded-lg space-y-4">
                     <Input
+                     className="hover:text-black"
                       placeholder={
                         index === 0
                           ? "Manufacturing Site"
@@ -994,6 +844,7 @@ export default function ClientOnboardingIATF({
 
                     <div className="grid grid-cols-3 gap-4">
                       <Input
+                       className="hover:text-black"
                         placeholder="Employees Mfg"
                         type="number"
                         value={site.employees_mfg}
@@ -1006,6 +857,7 @@ export default function ClientOnboardingIATF({
                         }
                       />
                       <Input
+                       className="hover:text-black"
                         placeholder="Employees Support"
                         type="number"
                         value={site.employees_support}
@@ -1037,6 +889,7 @@ export default function ClientOnboardingIATF({
                             className="border p-4 rounded-lg space-y-3"
                           >
                             <Input
+                             className="hover:text-black"
                               placeholder="Remote Location Name"
                               value={remote.site_name}
                               onChange={(e) =>
@@ -1101,6 +954,7 @@ export default function ClientOnboardingIATF({
                                   <Command>
                                     <div className="border-b px-3 py-2">
                                       <Input
+                                      
                                         placeholder="Search support functions..."
                                         className="h-9"
                                       />
@@ -1151,6 +1005,7 @@ export default function ClientOnboardingIATF({
 
                             <div className="grid grid-cols-3 gap-3">
                               <Input
+                               className="hover:text-black"
                                 type="number"
                                 placeholder="Employees Support"
                                 value={remote.employees_support}
@@ -1204,70 +1059,7 @@ export default function ClientOnboardingIATF({
               </div>
             </div>
 
-            {/* <div>
-      <h3 className="text-lg font-semibold mb-4">
-        Remote Locations
-      </h3>
-
-      <div className="space-y-6">
-        {app.remote_locations.map((site, index) => (
-          <div key={index} className="border p-5 rounded-lg space-y-4">
-            <Input
-              placeholder="Remote Location Name"
-              value={site.site_name}
-              onChange={(e) =>
-                updateRemoteLocation(index, "site_name", e.target.value)
-              }
-            />
-
-            <Textarea
-              placeholder="Address"
-              value={site.address}
-              onChange={(e) =>
-                updateRemoteLocation(index, "address", e.target.value)
-              }
-            />
-
-            <div className="grid grid-cols-3 gap-4">
-              <Input
-                placeholder="Employees Mfg"
-                type="number"
-                value={site.employees_mfg}
-                onChange={(e) =>
-                  updateRemoteLocation(index, "employees_mfg", e.target.value)
-                }
-              />
-              <Input
-                placeholder="Employees Support"
-                type="number"
-                value={site.employees_support}
-                onChange={(e) =>
-                  updateRemoteLocation(index, "employees_support", e.target.value)
-                }
-              />
-              <Input
-                placeholder="Total Employees"
-                value={site.total_employees}
-                disabled
-              />
-            </div>
-
-            {app.remote_locations.length > 1 && (
-              <Button
-                variant="destructive"
-                onClick={() => removeRemoteLocation(index)}
-              >
-                Remove Location
-              </Button>
-            )}
-          </div>
-        ))}
-
-        <Button variant="outline" onClick={addRemoteLocation}>
-          + Add Remote Location
-        </Button>
-      </div>
-    </div> */}
+      
           </CardContent>
         </Card>
 
@@ -1287,6 +1079,7 @@ export default function ClientOnboardingIATF({
                 IAF Code <span className="text-red-500">*</span>
               </label>
               <Input
+               className="hover:text-black"
                 placeholder="e.g. 17"
                 value={app.iaf_code}
                 onChange={(e) => setApp({ ...app, iaf_code: e.target.value })}
@@ -1297,6 +1090,7 @@ export default function ClientOnboardingIATF({
               <label className="text-sm font-medium">NACE Code</label>
 
               <Input
+               className="hover:text-black"
                 placeholder="e.g. C29.32"
                 value={app.nace_code}
                 onChange={(e) => setApp({ ...app, nace_code: e.target.value })}
@@ -1307,6 +1101,7 @@ export default function ClientOnboardingIATF({
               <label className="text-sm font-medium">SIC Code</label>
 
               <Input
+               className="hover:text-black"
                 placeholder="e.g. 3714"
                 value={app.sic_code}
                 onChange={(e) => setApp({ ...app, sic_code: e.target.value })}
@@ -1324,6 +1119,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Management personnel</Label>
               <Input
+               className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.management}
                 onChange={(e) =>
@@ -1341,6 +1137,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Supporting personnel</Label>
               <Input
+               className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.supporting}
                 onChange={(e) =>
@@ -1358,6 +1155,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Manufacturing personnel</Label>
               <Input
+               className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.manufacturing}
                 onChange={(e) =>

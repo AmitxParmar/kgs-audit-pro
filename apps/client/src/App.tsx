@@ -18,43 +18,42 @@ function App() {
     <div className="min-h-screen bg-background">
 
         <Toaster position="top-center" reverseOrder={false} />
-      <Routes>
-        {/* Auth pages */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+     <Routes>
+  {/* Auth */}
+  <Route path="/login" element={<Login />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* ✅ PUBLIC routes (no ProtectedRoute) */}
-        <Route path="/audit-schedule" element={<AuditSchedule />} />
-        <Route path="/iaf-schedule" element={<IafSchedule />} />
+  {/* Public */}
+  <Route path="/audit-schedule" element={<AuditSchedule />} />
+  <Route path="/iaf-schedule" element={<IafSchedule />} />
 
-        {/* Protected app  */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <AppShell>
-                <Routes>
-                  {/* Dashboard (protected) */}
-                  <Route path="/" element={<Dashboard />} />
+  {/* Protected Layout */}
+  <Route
+    path="/"
+    element={
+      <ProtectedRoute>
+        <AppShell />
+      </ProtectedRoute>
+    }
+  >
+   
+    <Route index element={<Dashboard />} />
 
-                  {/* Admin (protected + role gated) */}
-                  <Route
-                    path="/admin/*"
-                    element={
-                      <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
-                        <AdminRoutes />
-                      </RoleRoute>
-                    }
-                  />
+    <Route path="clients" element={<ClientsPage />} />
+    <Route path="clients/onboard" element={<ClientOnboarding />} />
 
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </AppShell>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+    <Route
+      path="admin/*"
+      element={
+        <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
+          <AdminRoutes />
+        </RoleRoute>
+      }
+    />
+
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Route>
+</Routes>
     </div>
   );
 }

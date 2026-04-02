@@ -20,7 +20,7 @@ export function AppShell() {
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   return (
-    <div className="flex h-screen bg-darkBg text-gray-200 text-[13px]">
+    <div className="flex h-screen bg-gradient-to-b from-slate-950 to-slate-950/80 text-gray-200 text-[13px]">
 
       {/* ── Mobile overlay ─────────────────────────────────────────────── */}
       <div
@@ -188,7 +188,7 @@ export function AppShell() {
         </div>
 
         {/* PAGE CONTENT */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 bg-gradient-to-b from-slate-950 to-slate-950/80">
           <Outlet context={{ ctx }} />
         </div>
       </div>

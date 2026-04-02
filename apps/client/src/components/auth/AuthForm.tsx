@@ -13,6 +13,7 @@ export function AuthForm() {
   const [formData, setFormData]       = useState({
     email: '', password: '', confirmPassword: '', name: '',
   })
+const navigate = useNavigate()
   
 
   const {
@@ -85,7 +86,7 @@ export function AuthForm() {
                   : isUpdatingPassword
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
 
         {/* Logo + title */}
@@ -106,7 +107,7 @@ export function AuthForm() {
               KGS
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">
             {mode === 'login'           && 'Sign in to your account'}
             {mode === 'signup'          && 'Create your account'}
             {mode === 'forgot-password' && 'Reset your password'}
