@@ -1,29 +1,37 @@
-import { supabase } from './supabase'
+import { supabase } from "./supabase";
 
+// ✅ Single AuthUser interface
 export interface AuthUser {
-  id: string
-  email: string
-  name?: string
-  role?: string
+  id: string;
+  email: string;
+  name?: string;
+  role?:
+    | "super_admin"
+    | "cb_admin"
+    | "lead_auditor"
+    | "auditor"
+    | "staff"
+    | "accreditation_manager";
+  cb_id?: string;
 }
 
 export interface LoginCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface SignupCredentials extends LoginCredentials {
-  name: string
-  confirmPassword: string
+  name: string;
+  confirmPassword: string;
 }
 
 export interface ResetPasswordData {
-  email: string
+  email: string;
 }
 
 export interface UpdatePasswordData {
-  password: string
-  confirmPassword: string
+  password: string;
+  confirmPassword: string;
 }
 
 export const authService = {
@@ -31,70 +39,42 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
-    })
-
-    if (error) throw error
-    return data
+    });
+    if (error) throw error;
+    return data;
   },
 
   async signup(credentials: SignupCredentials) {
     if (credentials.password !== credentials.confirmPassword) {
-      throw new Error('Passwords do not match')
+      throw new Error("Passwords do not match");
     }
-
     const { data, error } = await supabase.auth.signUp({
       email: credentials.email,
       password: credentials.password,
       options: {
-        data: {
-          name: credentials.name,
-        },
+        data: { name: credentials.name },
       },
-    })
-
-    if (error) throw error
-    return data
+    });
+    if (error) throw error;
+    return data;
   },
 
   async resetPassword(email: string) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (error) throw error
-    return data
+    });
+    if (error) throw error;
+    return data;
   },
 
   async updatePassword(password: string) {
-    const { data, error } = await supabase.auth.updateUser({
-      password,
-    })
-
-    if (error) throw error
-    return data
+    const { data, error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return data;
   },
 
   async logout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   },
-
-  async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser()
-    return user
-  },
-
-  onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        callback({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name,
-        })
-      } else {
-        callback(null)
-      }
-    })
-  },
-}
+};

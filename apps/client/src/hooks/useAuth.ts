@@ -1,56 +1,59 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { authService, AuthUser } from '../lib/auth'
-import { useState, useEffect } from 'react'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { authService, AuthUser } from "../lib/auth";
+import { useAuthContext } from "@/context/AuthContext";
 
 export function useAuth() {
-  const queryClient = useQueryClient()
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const { user, isLoading } = useAuthContext();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const { data: { subscription } } = authService.onAuthStateChange((user) => {
-      setUser(user)
-      queryClient.setQueryData(['auth', 'user'], user)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [queryClient])
-
+  // ── Login ──────────────────────────────────────────────────────────────
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
       if (data.user) {
-        setUser({
+        const authUser: AuthUser = {
           id: data.user.id,
           email: data.user.email!,
           name: data.user.user_metadata?.name,
-        })
+          role: data.user.user_metadata?.role,
+        };
+        queryClient.setQueryData(["auth", "user"], authUser);
       }
     },
-  })
+  });
 
+  // ── Signup ─────────────────────────────────────────────────────────────
   const signupMutation = useMutation({
     mutationFn: authService.signup,
-  })
+    onSuccess: (data) => {
+      if (data.user && data.session) {
+        const authUser: AuthUser = {
+          id: data.user.id,
+          email: data.user.email!,
+          name: data.user.user_metadata?.name,
+        };
+        queryClient.setQueryData(["auth", "user"], authUser);
+      }
+    },
+  });
 
   const resetPasswordMutation = useMutation({
     mutationFn: authService.resetPassword,
-  })
-
+  });
   const updatePasswordMutation = useMutation({
     mutationFn: authService.updatePassword,
-  })
+  });
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      setUser(null)
-      queryClient.clear()
+      queryClient.clear();
     },
-  })
+  });
 
   return {
     user,
-    isLoading: !user,
+    isLoading,
     login: loginMutation.mutateAsync,
     signup: signupMutation.mutateAsync,
     resetPassword: resetPasswordMutation.mutateAsync,
@@ -65,5 +68,5 @@ export function useAuth() {
     signupError: signupMutation.error,
     resetPasswordError: resetPasswordMutation.error,
     updatePasswordError: updatePasswordMutation.error,
-  }
+  };
 }
