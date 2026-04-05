@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase } from "./supabase";
 
 // ✅ Single AuthUser interface
 export interface AuthUser {
@@ -10,22 +10,22 @@ export interface AuthUser {
 }
 
 export interface LoginCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface SignupCredentials extends LoginCredentials {
-  name: string
-  confirmPassword: string
+  name: string;
+  confirmPassword: string;
 }
 
 export interface ResetPasswordData {
-  email: string
+  email: string;
 }
 
 export interface UpdatePasswordData {
-  password: string
-  confirmPassword: string
+  password: string;
+  confirmPassword: string;
 }
 
 export const authService = {
@@ -40,7 +40,7 @@ export const authService = {
 
   async signup(credentials: SignupCredentials) {
     if (credentials.password !== credentials.confirmPassword) {
-      throw new Error('Passwords do not match')
+      throw new Error("Passwords do not match");
     }
     const { data, error } = await supabase.auth.signUp({
       email: credentials.email,
@@ -68,8 +68,8 @@ export const authService = {
   },
 
   async logout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   },
 
   async getCurrentUser() {

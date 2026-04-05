@@ -20,7 +20,7 @@ export function useAuth() {
         queryClient.setQueryData(['auth', 'user'], authUser)
       }
     },
-  })
+  });
 
   // ── Signup ─────────────────────────────────────────────────────────────
   const signupMutation = useMutation({
@@ -45,7 +45,7 @@ export function useAuth() {
     onSuccess: () => {
       queryClient.clear()
     },
-  })
+  });
 
   return {
     user,
