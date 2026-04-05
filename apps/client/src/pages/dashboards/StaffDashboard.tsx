@@ -41,7 +41,7 @@ export function StaffDashboard() {
     filter === "all" ? audits : audits.filter((a) => a.std === filter);
 
   return (
-    <div className="flex h-screen bg-darkBg text-gray-200 text-[13px]">
+    <div className="flex h-screen bg-gradient-to-b from-slate-950 to-slate-950/80 text-gray-200 text-[13px]">
 
      
 

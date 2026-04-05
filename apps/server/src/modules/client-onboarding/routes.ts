@@ -4,7 +4,7 @@ import { getClients, createClient, getClientById, updateClient } from './control
 
 const router = Router();
 
-router.get('/', authMiddleware, getClients);
+router.get('/', getClients);
 router.post('/', authMiddleware, createClient);
 router.get('/:id', authMiddleware, getClientById);
 router.put('/:id', authMiddleware, updateClient);
