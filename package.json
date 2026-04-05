@@ -6,21 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "dev:client": "turbo run dev --filter=@kgs-audit-pro/client",
-    "dev:server": "turbo run dev --filter=@kgs-audit-pro/server",
-    "uat": "turbo run uat",
-    "uat:client": "turbo run uat --filter=@kgs-audit-pro/client",
-    "uat:server": "turbo run uat --filter=@kgs-audit-pro/server",
-    "start": "turbo run start",
-    "start:client": "turbo run start --filter=@kgs-audit-pro/client",
-    "start:server": "turbo run start --filter=@kgs-audit-pro/server",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean",
-    "deploy": "turbo run deploy"
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "turbo": "^1.10.16",
@@ -30,5 +20,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "react-router-dom": "^7.13.2"
   }
 }
