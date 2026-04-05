@@ -24,20 +24,16 @@ pop3_port = 54326
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-image_transformation_enabled = true
+# image_transformation_enabled = true
 
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
-refresh_token_rotation_enabled = true
-security_update_password_require_reauthentication = true
+# refresh_token_rotation_enabled = true
+# security_update_password_require_reauthentication = true
 
-[edge_functions]
-enabled = true
-port = 54321
-verify_jwt = false
 
 [analytics]
 enabled = false

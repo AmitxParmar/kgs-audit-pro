@@ -1,6 +1,34 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'http://localhost:54321'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your_anon_key'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Safety check (recommended)
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+
+// Hosted-only guard
+if (supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost")) {
+  throw new Error(`Hosted-only mode: refusing local Supabase URL: ${supabaseUrl}`);
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'kgs-audit-pro-auth',
+  },
+});
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed OK')
+  }
+})
+
+supabase.auth.getSession().catch(() => {
+  console.warn('Session check failed — clearing stored session')
+  supabase.auth.signOut()
+})

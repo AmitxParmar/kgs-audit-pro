@@ -1,6 +1,9 @@
 {
-  "buildCommand": "turbo run build --filter=@kgs-audit-pro/client",
-  "outputDirectory": "apps/client/dist",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
   "installCommand": "npm install",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
