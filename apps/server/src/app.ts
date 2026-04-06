@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler'
 import { authMiddleware } from './middleware/auth'
 import auditLifecycleRoutes from './modules/audit-lifecycle/routes'
 import clientOnboardingRoutes from './modules/client-onboarding/routes'
+import contractsRoutes from './modules/contracts/routes'
 import { supabase } from './config/supabase'
 
 
@@ -38,6 +39,9 @@ app.get('/health', (req, res) => {
 app.use('/api/audit-lifecycle', authMiddleware, auditLifecycleRoutes)
 // Add other module routes here
 app.use('/api/client-onboarding', clientOnboardingRoutes)
+
+// handle contracts routes
+app.use("/api/contracts", contractsRoutes);
 
 // Error handling
 app.use(errorHandler)
