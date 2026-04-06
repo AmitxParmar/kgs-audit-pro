@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 
 import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
 import IafSchedule from "./pages/audit-schedule/IAFSchedule";
+import AuditReports from "./pages/audit-reports/AuditReports";
 
 function App() {
   return (
@@ -41,6 +42,8 @@ function App() {
 
     <Route path="clients" element={<ClientsPage />} />
     <Route path="clients/onboard" element={<ClientOnboarding />} />
+
+    <Route path="audit-reports" element={<AuditReports />} />
 
     <Route
       path="admin/*"
