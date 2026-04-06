@@ -10,80 +10,81 @@ export function AuthForm() {
   const [mode, setMode]               = useState<AuthMode>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData]       = useState({
     email: '', password: '', confirmPassword: '', name: '',
   })
-const navigate = useNavigate()
+  const navigate = useNavigate()
   
 
   const {
     login, signup, resetPassword, updatePassword,
-    isLoggingIn, isSigningUp, isResettingPassword, isUpdatingPassword,
     loginError, signupError, resetPasswordError, updatePasswordError,
   } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setSuccessMessage('')
+    e.preventDefault()
+    setSuccessMessage('')
+    setIsSubmitting(true)
 
-  try {
-    switch (mode) {
-    case 'login': {
-  await login({ email: formData.email, password: formData.password })
-  navigate('/')   
-  break
-}
+    try {
+      switch (mode) {
+        case 'login': {
+          await login({ email: formData.email, password: formData.password })
+          setIsSubmitting(false)
+          navigate('/', { replace: true })   
+          break
+        }
 
-      case 'signup': {
-  const data = await signup({
-    email: formData.email,
-    password: formData.password,
-    confirmPassword: formData.confirmPassword,
-    name: formData.name,
-  })
+        case 'signup': {
+          const data = await signup({
+            email: formData.email,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword,
+            name: formData.name,
+          })
 
-  if (data?.user) {
-    
-    navigate('/')   
-  } else {
-    setSuccessMessage('✉ Check your email to confirm your account.')
-    setMode('login')
-  }
-  break
-}
+          if (data?.user) {
+            setIsSubmitting(false)
+            navigate('/', { replace: true })   
+          } else {
+            setSuccessMessage('✉ Check your email to confirm your account.')
+            setMode('login')
+            setIsSubmitting(false)
+          }
+          break
+        }
 
-      case 'forgot-password':
-        await resetPassword(formData.email)
-        setSuccessMessage('✉ Password reset link sent — check your email.')
-        setMode('login')
-        break
+        case 'forgot-password':
+          await resetPassword(formData.email)
+          setSuccessMessage('✉ Password reset link sent — check your email.')
+          setMode('login')
+          setIsSubmitting(false)
+          break
 
-      case 'reset-password':
-        await updatePassword(formData.password)
-        setSuccessMessage('✓ Password updated. Please sign in.')
-        setMode('login')
-        break
+        case 'reset-password':
+          await updatePassword(formData.password)
+          setSuccessMessage('✓ Password updated. Please sign in.')
+          setMode('login')
+          setIsSubmitting(false)
+          break
+      }
+    } catch (err) {
+      console.error('Auth error:', err)
+      setIsSubmitting(false)
     }
-  } catch (err) {
-    console.error('Auth error:', err)
   }
-}
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
   const error = (
-  mode === 'login'           ? loginError :
-  mode === 'signup'          ? signupError :
-  mode === 'forgot-password' ? resetPasswordError :
-  updatePasswordError
-) as Error | null   // ← cast from unknown to Error | null
-
-  const isLoading = mode === 'login'           ? isLoggingIn
-                  : mode === 'signup'          ? isSigningUp
-                  : mode === 'forgot-password' ? isResettingPassword
-                  : isUpdatingPassword
+    mode === 'login'           ? loginError :
+    mode === 'signup'          ? signupError :
+    mode === 'forgot-password' ? resetPasswordError :
+    updatePasswordError
+  ) as Error | null   // ← cast from unknown to Error | null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -219,10 +220,10 @@ const navigate = useNavigate()
           {/* Submit button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <span className="flex items-center gap-2">
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>

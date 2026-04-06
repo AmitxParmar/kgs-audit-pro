@@ -1,7 +1,7 @@
 // src/components/layout/AppShell.tsx
 import { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "../../hooks/useAuth";
 import type { ReactNode } from "react";
 
 export function AppShell() {
@@ -10,10 +10,15 @@ export function AppShell() {
   const [ctx, setCtx] = useState<"both" | "iatf" | "iaf">("both");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { logout } = useAuth();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   }
 
   const isActive = (path: string) =>
@@ -188,7 +193,7 @@ export function AppShell() {
         </div>
 
         {/* PAGE CONTENT */}
-        <div className="flex-1 overflow-auto p-6 bg-gradient-to-b from-slate-950 to-slate-950/80">
+        <div className="flex-1 overflow-auto bg-gradient-to-b from-slate-950 to-slate-950/80">
           <Outlet context={{ ctx }} />
         </div>
       </div>

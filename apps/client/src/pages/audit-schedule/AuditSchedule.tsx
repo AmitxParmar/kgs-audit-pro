@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import KgsSidebar from "./KGSSidebar";
 import Document from "./Document";
 import Notification from "./Notification";
 
@@ -53,8 +52,6 @@ export default function AuditSchedule() {
   const navigate = useNavigate(); // ✅ FIX: required for IATF/IAF buttons to work
 
   const [activeStep, setActiveStep] = useState<StepKey>("Audit Planning");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState<CollapsedSections>({
     details: false,
@@ -231,7 +228,7 @@ export default function AuditSchedule() {
   };
 
   return (
-    <div className="h-screen w-full bg-[#0B1220] text-slate-200 flex overflow-hidden">
+    <div className="w-full bg-[#0B1220] text-slate-200">
       <style>{`
         .kgs-field {
           color: rgb(226 232 240) !important;
@@ -252,37 +249,11 @@ export default function AuditSchedule() {
         input.kgs-field[type="date"] { color-scheme: dark; }
       `}</style>
 
-      <KgsSidebar
-        sidebarCollapsed={sidebarCollapsed}
-        mobileSidebarOpen={mobileSidebarOpen}
-        setMobileSidebarOpen={setMobileSidebarOpen}
-      />
-
-      {/* MAIN + RIGHT PANEL WRAPPER */}
-      <div className="flex-1 min-w-0 flex overflow-hidden">
+      <div className="flex overflow-hidden">
         <main className="flex-1 min-w-0 flex flex-col">
           {/* Topbar */}
           <header className="h-14 shrink-0 flex items-center justify-between px-4 lg:px-5 border-b border-white/10 bg-black/20 backdrop-blur">
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                className="lg:hidden h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition grid place-items-center"
-                onClick={() => setMobileSidebarOpen(true)}
-                aria-label="Open sidebar"
-                type="button"
-              >
-                ☰
-              </button>
-
-              <button
-                className="hidden lg:grid h-10 w-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition place-items-center"
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                aria-label="Toggle sidebar collapse"
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                type="button"
-              >
-                {sidebarCollapsed ? "»" : "«"}
-              </button>
-
               <div className="text-sm text-slate-400/90 truncate">
                 {breadcrumbs.map((b, idx) => (
                   <span key={b} className="whitespace-nowrap">
@@ -391,7 +362,7 @@ export default function AuditSchedule() {
           </section>
 
           {/* Content */}
-          <section className="flex-1 min-h-0 overflow-auto px-4 lg:px-5 pb-28 space-y-4 bg-gradient-to-b from-black/0 to-black/20">
+          <section className="px-4 lg:px-5 pb-10 space-y-4">
             <Card
               title="Audit details"
               subtitle="Core identification & classification"
