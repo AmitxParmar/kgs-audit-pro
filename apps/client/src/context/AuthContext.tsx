@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { authService, AuthUser } from "../lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +21,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Get current session
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
 
@@ -44,16 +39,17 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     });
 
+    // Listen for auth state changes
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
 
       if (session?.user) {
         setUser({
-  id: session.user.id,
-  email: session.user.email!,
-  name: session.user.user_metadata?.name,
-  role: session.user.user_metadata?.role || 'staff', 
-});
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name,
+          role: session.user.user_metadata?.role || "staff",
+        });
       } else {
         setUser(null);
       }
@@ -68,7 +64,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isProfileLoading }}>
+    <AuthContext.Provider value={{ user, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
