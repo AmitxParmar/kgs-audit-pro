@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { CommandInput } from "@/components/ui/command";
 
 import {
   Card,
@@ -84,7 +85,9 @@ export default function ClientOnboardingIATF({
 }: any) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [applicationType, setApplicationType] = useState<"IATF" | "IAF">("IATF");
+  const [applicationType, setApplicationType] = useState<"IATF" | "IAF">(
+    "IATF",
+  );
   const [attachment, setAttachment] = useState<File | null>(null);
   const [contacts, setContacts] = useState([
     { name: "", designation: "", phone: "", email: "" },
@@ -200,20 +203,16 @@ export default function ClientOnboardingIATF({
       1000 + Math.random() * 9000,
     )}`;
 
-  const uploadAttachment = async (code: string) => {
-    if (!attachment) return null;
-    const ext = attachment.name.split(".").pop();
-    const path = `${code}/${Date.now()}.${ext}`;
+ const toBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-    const { error } = await supabase.storage
-      .from("client-documents")
-      .upload(path, attachment);
+    reader.readAsDataURL(file);
 
-    if (error) throw error;
-
-    return supabase.storage.from("client-documents").getPublicUrl(path).data
-      .publicUrl;
-  };
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
   const safeInt = (value: string | number | null) => {
     const num = Number(value);
@@ -331,20 +330,40 @@ export default function ClientOnboardingIATF({
     setApp({ ...app, manufacturing_sites: updated });
   };
 
-  const toggleRemoteSupportFunction = (
-    mfgIndex: number,
-    remoteIndex: number,
-    func: string,
-  ) => {
-    const updated = [...app.manufacturing_sites];
-    const remote = updated[mfgIndex].remote_locations[remoteIndex];
+ const toggleRemoteSupportFunction = (
+  mfgIndex: number,
+  remoteIndex: number,
+  func: string
+) => {
+  setApp((prev) => {
+    const updatedSites = prev.manufacturing_sites.map((site, i) => {
+      if (i !== mfgIndex) return site;
 
-    remote.support_functions = remote.support_functions.includes(func)
-      ? remote.support_functions.filter((f) => f !== func)
-      : [...remote.support_functions, func];
+      return {
+        ...site,
+        remote_locations: site.remote_locations.map((remote, j) => {
+          if (j !== remoteIndex) return remote;
 
-    setApp({ ...app, manufacturing_sites: updated });
-  };
+          const currentFunctions = remote.support_functions || [];
+
+          const updatedFunctions = currentFunctions.includes(func)
+            ? currentFunctions.filter((f: string) => f !== func)
+            : [...currentFunctions, func];
+
+          return {
+            ...remote,
+            support_functions: updatedFunctions,
+          };
+        }),
+      };
+    });
+
+    return {
+      ...prev,
+      manufacturing_sites: updatedSites,
+    };
+  });
+};
 
   const updateRemoteLocation = (
     mfgIndex: number,
@@ -391,48 +410,77 @@ export default function ClientOnboardingIATF({
     setApp({ ...app, other_oem_customers: updated });
   };
 
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
 
- const handleSubmit = async () => {
-  try {
-    setLoading(true);
+      const user = await authService.getCurrentUser();
 
-    const user = await authService.getCurrentUser();
+      if (!user) {
+        toast.error("User not authenticated");
+        return;
+      }
 
-    if (!user) {
-      toast.error("User not authenticated");
-      return;
+      const clientCode = generateClientCode(client.organization_name);
+      let attachment_base64 = null;
+
+if (attachment) {
+  attachment_base64 = await toBase64(attachment);
+}
+      const payload = {
+        name: client.organization_name,
+        contact_name: contacts[0]?.name,
+        contact_email: contacts[0]?.email,
+        contact_phone: contacts[0]?.phone,
+        address: client.mailing_address,
+        website: client.website,
+        industry: app.applicable_standards.join(", "),
+
+        application_type: applicationType,
+
+        application: {
+          type_of_audit: app.type_of_audit,
+          applicable_standards: app.applicable_standards,
+          product_design_responsibility: app.product_design_responsibility,
+
+          manufacturing_sites: app.manufacturing_sites,
+          remote_locations: app.manufacturing_sites[0]?.remote_locations || [],
+
+          iaf_code: app.iaf_code,
+          nace_code: app.nace_code,
+          sic_code: app.sic_code,
+
+          languages_spoken: app.languages_spoken,
+          shifts: app.shifts,
+
+          legal_obligations: app.legal_obligations,
+          legal_obligation_details: app.legal_obligation_details,
+
+          previous_iatf_certified: app.previous_iatf_certified,
+
+          automotive_customers: app.automotive_customers,
+          iatf_oem_customers: app.iatf_oem_customers,
+          other_oem_customers: app.other_oem_customers,
+
+          proposed_scope: app.proposed_scope,
+          outsourced_processes: app.outsourced_processes,
+
+           attachment_base64,
+        },
+      };
+
+      const res = await clientOnboardingService.create(payload);
+
+      toast.success("Client onboarded successfully");
+
+      navigate(`/clients`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
     }
-
-   const payload = {
-  name: client.organization_name,
-  contact_name: contacts[0]?.name,
-  contact_email: contacts[0]?.email,
-  contact_phone: contacts[0]?.phone,
-  address: client.mailing_address,
-  website: client.website,
-  industry: app.applicable_standards.join(", "),
-
-  
-  application_type: applicationType, // "IATF" or "IAF"
-
-  
-
-  manufacturing_sites: app.manufacturing_sites,
-  remote_locations: app.manufacturing_sites[0]?.remote_locations || [],
-};
-
-    const res = await clientOnboardingService.create(payload);
-
-    toast.success("Client onboarded successfully");
-
-  navigate(`/clients`);
-  } catch (err: any) {
-    console.error(err);
-    toast.error(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const confirmScopeChange = async () => {
     if (!applicationId) {
@@ -486,7 +534,13 @@ export default function ClientOnboardingIATF({
         setApp({
           ...app,
           ...data,
-          manufacturing_sites: data.manufacturing_sites || [],
+         manufacturing_sites: (data.manufacturing_sites || []).map((site: any) => ({
+  ...site,
+  remote_locations: (site.remote_locations || []).map((remote: any) => ({
+    ...remote,
+    support_functions: remote.support_functions || [],
+  })),
+})),
           applicable_standards: data.standard?.split(", ") || [],
           languages_spoken: data.languages_spoken || {
             management: "",
@@ -552,9 +606,8 @@ export default function ClientOnboardingIATF({
   }, [applicationId]);
 
   return (
-  <div className="min-h-screen py-10 px-4 flex justify-center bg-gradient-to-b from-slate-950 to-slate-950/80 text-white">
+    <div className="min-h-screen py-10 px-4 flex justify-center bg-gradient-to-b from-slate-950 to-slate-950/80 text-white">
       <div className="w-full max-w-6xl space-y-8">
-       
         <Card className="bg-card border border-border shadow-sm rounded-2xl">
           <CardHeader>
             <CardTitle className="text-center text-2xl font-bold">
@@ -564,26 +617,26 @@ export default function ClientOnboardingIATF({
             </CardTitle>
           </CardHeader>
         </Card>
-         <Card className="bg-card border border-border shadow-sm rounded-2xl">
-  <CardHeader>
-    <CardTitle>
-      Select Application Type <span className="text-red-500">*</span>
-    </CardTitle>
-  </CardHeader>
+        <Card className="bg-card border border-border shadow-sm rounded-2xl">
+          <CardHeader>
+            <CardTitle>
+              Select Application Type <span className="text-red-500">*</span>
+            </CardTitle>
+          </CardHeader>
 
-  <CardContent className="flex gap-6">
-    {["IATF", "IAF"].map((type) => (
-      <label key={type} className="flex gap-2">
-        <input
-          type="radio"
-          checked={applicationType === type}
-          onChange={() => setApplicationType(type as "IATF" | "IAF")}
-        />
-        {type}
-      </label>
-    ))}
-  </CardContent>
-</Card>
+          <CardContent className="flex gap-6">
+            {["IATF", "IAF"].map((type) => (
+              <label key={type} className="flex gap-2">
+                <input
+                  type="radio"
+                  checked={applicationType === type}
+                  onChange={() => setApplicationType(type as "IATF" | "IAF")}
+                />
+                {type}
+              </label>
+            ))}
+          </CardContent>
+        </Card>
 
         <Card className="bg-card border border-border shadow-sm rounded-2xl">
           <CardHeader>
@@ -671,10 +724,10 @@ export default function ClientOnboardingIATF({
 
           <CardContent className="space-y-6">
             <div className="grid  grid-cols-2 gap-6">
-              <div >
+              <div>
                 <RequiredLabel text="Organization Name" />
                 <Input
-               className="hover:text-black"
+                  className="hover:text-black"
                   value={client.organization_name}
                   onChange={(e) =>
                     setClient({ ...client, organization_name: e.target.value })
@@ -685,7 +738,7 @@ export default function ClientOnboardingIATF({
               <div>
                 <label className="text-sm font-medium">Website</label>
                 <Input
-                className="hover:text-black"
+                  className="hover:text-black"
                   value={client.website}
                   onChange={(e) =>
                     setClient({ ...client, website: e.target.value })
@@ -727,7 +780,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Name" />
                     <Input
-                    className="hover:text-black"
+                      className="hover:text-black"
                       required
                       value={c.name}
                       onChange={(e) =>
@@ -739,7 +792,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Designation" />
                     <Input
-                     className="hover:text-black"
+                      className="hover:text-black"
                       required
                       value={c.designation}
                       onChange={(e) =>
@@ -753,7 +806,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Phone" />
                     <Input
-                     className="hover:text-black"
+                      className="hover:text-black"
                       required
                       value={c.phone}
                       onChange={(e) =>
@@ -765,7 +818,7 @@ export default function ClientOnboardingIATF({
                   <div>
                     <RequiredLabel text="Email" />
                     <Input
-                     className="hover:text-black"
+                      className="hover:text-black"
                       required
                       type="email"
                       value={c.email}
@@ -814,7 +867,7 @@ export default function ClientOnboardingIATF({
                 {app.manufacturing_sites.map((site, index) => (
                   <div key={index} className="border p-5 rounded-lg space-y-4">
                     <Input
-                     className="hover:text-black"
+                      className="hover:text-black"
                       placeholder={
                         index === 0
                           ? "Manufacturing Site"
@@ -844,7 +897,7 @@ export default function ClientOnboardingIATF({
 
                     <div className="grid grid-cols-3 gap-4">
                       <Input
-                       className="hover:text-black"
+                        className="hover:text-black"
                         placeholder="Employees Mfg"
                         type="number"
                         value={site.employees_mfg}
@@ -857,7 +910,7 @@ export default function ClientOnboardingIATF({
                         }
                       />
                       <Input
-                       className="hover:text-black"
+                        className="hover:text-black"
                         placeholder="Employees Support"
                         type="number"
                         value={site.employees_support}
@@ -889,7 +942,7 @@ export default function ClientOnboardingIATF({
                             className="border p-4 rounded-lg space-y-3"
                           >
                             <Input
-                             className="hover:text-black"
+                              className="hover:text-black"
                               placeholder="Remote Location Name"
                               value={remote.site_name}
                               onChange={(e) =>
@@ -915,97 +968,91 @@ export default function ClientOnboardingIATF({
                               }
                             />
 
-                            <div className="mt-4">
-                              <label className="text-sm font-medium mb-2 block">
-                                Support Functions
-                              </label>
+                         <div className="mt-4">
+  <label className="text-sm font-medium mb-2 block">
+    Support Functions
+  </label>
 
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full justify-between min-h-[44px] px-3"
-                                  >
-                                    <div className="flex flex-wrap gap-1 max-w-[90%]">
-                                      {remote.support_functions?.length > 0 ? (
-                                        remote.support_functions.map((func) => (
-                                          <Badge
-                                            key={func}
-                                            variant="secondary"
-                                            className="truncate max-w-[180px]"
-                                          >
-                                            {func}
-                                          </Badge>
-                                        ))
-                                      ) : (
-                                        <span className="text-muted-foreground text-sm">
-                                          Select support functions
-                                        </span>
-                                      )}
-                                    </div>
-                                    <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
-                                  </Button>
-                                </PopoverTrigger>
+  <Popover modal={true}>
+    <PopoverTrigger asChild>
+     <Button
+  type="button"
+  variant="outline"
+  className="w-full justify-between min-h-[44px] px-3 cursor-pointer"
+>
+        <div className="flex flex-wrap gap-1 max-w-[90%]">
+          {remote.support_functions?.length > 0 ? (
+            remote.support_functions.map((func: string) => (
+              <Badge
+                key={func}
+                variant="secondary"
+                className="truncate max-w-[180px]"
+              >
+                {func}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-sm">
+              Select support functions
+            </span>
+          )}
+        </div>
+        <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
+      </Button>
+    </PopoverTrigger>
 
-                                <PopoverContent
-                                  align="start"
-                                  className="w-full p-0"
-                                >
-                                  <Command>
-                                    <div className="border-b px-3 py-2">
-                                      <Input
-                                      
-                                        placeholder="Search support functions..."
-                                        className="h-9"
-                                      />
-                                    </div>
+   <PopoverContent
+  align="start"
+  className="w-[300px] p-0 bg-background bg-white border shadow-lg "
+>
+      <Command>
+        {/* ✅ FIXED: CommandInput directly inside Command */}
+        <CommandInput
+          placeholder="Search support functions..."
+          className="h-8"
+        />
 
-                                    <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
-                                      No function found
-                                    </CommandEmpty>
+        <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+          No function found
+        </CommandEmpty>
 
-                                    <CommandGroup className="max-h-[260px] overflow-auto">
-                                      {SUPPORT_FUNCTIONS.map((func) => {
-                                        const selected =
-                                          remote.support_functions?.includes(
-                                            func,
-                                          );
+        <CommandGroup className="max-h-[260px] overflow-auto">
+          {SUPPORT_FUNCTIONS.map((func) => {
+            const selected =
+              remote.support_functions?.includes(func) || false;
 
-                                        return (
-                                          <CommandItem
-                                            key={func}
-                                            onSelect={() =>
-                                              toggleRemoteSupportFunction(
-                                                index,
-                                                rIndex,
-                                                func,
-                                              )
-                                            }
-                                            className="flex items-center gap-2 px-4 py-2"
-                                          >
-                                            <Check
-                                              className={cn(
-                                                "h-4 w-4",
-                                                selected
-                                                  ? "opacity-100"
-                                                  : "opacity-0",
-                                              )}
-                                            />
-                                            <span className="text-sm">
-                                              {func}
-                                            </span>
-                                          </CommandItem>
-                                        );
-                                      })}
-                                    </CommandGroup>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
+            return (
+             <CommandItem
+  key={func}
+  value={func}
+  onSelect={() =>
+    toggleRemoteSupportFunction(
+      index,
+      rIndex,
+      func
+    )
+  }
+                className="flex items-center gap-2 px-4 py-2 cursor-pointer"
+              >
+                <Check
+                  className={cn(
+                    "h-4 w-4",
+                    selected ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="text-sm">{func}</span>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      </Command>
+    </PopoverContent>
+  </Popover>
+</div>
 
                             <div className="grid grid-cols-3 gap-3">
                               <Input
-                               className="hover:text-black"
+                                className="hover:text-black"
                                 type="number"
                                 placeholder="Employees Support"
                                 value={remote.employees_support}
@@ -1058,8 +1105,6 @@ export default function ClientOnboardingIATF({
                 </Button>
               </div>
             </div>
-
-      
           </CardContent>
         </Card>
 
@@ -1079,7 +1124,7 @@ export default function ClientOnboardingIATF({
                 IAF Code <span className="text-red-500">*</span>
               </label>
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. 17"
                 value={app.iaf_code}
                 onChange={(e) => setApp({ ...app, iaf_code: e.target.value })}
@@ -1090,7 +1135,7 @@ export default function ClientOnboardingIATF({
               <label className="text-sm font-medium">NACE Code</label>
 
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. C29.32"
                 value={app.nace_code}
                 onChange={(e) => setApp({ ...app, nace_code: e.target.value })}
@@ -1101,7 +1146,7 @@ export default function ClientOnboardingIATF({
               <label className="text-sm font-medium">SIC Code</label>
 
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. 3714"
                 value={app.sic_code}
                 onChange={(e) => setApp({ ...app, sic_code: e.target.value })}
@@ -1119,7 +1164,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Management personnel</Label>
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.management}
                 onChange={(e) =>
@@ -1137,7 +1182,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Supporting personnel</Label>
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.supporting}
                 onChange={(e) =>
@@ -1155,7 +1200,7 @@ export default function ClientOnboardingIATF({
             <div className="grid grid-cols-2 gap-6 items-center">
               <Label>Manufacturing personnel</Label>
               <Input
-               className="hover:text-black"
+                className="hover:text-black"
                 placeholder="e.g. English"
                 value={app.languages_spoken.manufacturing}
                 onChange={(e) =>
@@ -1190,7 +1235,7 @@ export default function ClientOnboardingIATF({
 
                 <Input
                   type="time"
-                 className="bg-background border-border"
+                  className="bg-background border-border"
                   value={shift.start}
                   onChange={(e) => {
                     const updated = [...app.shifts];
@@ -1333,6 +1378,7 @@ export default function ClientOnboardingIATF({
                     </label>
 
                     <Input
+                    className="hover:text-black"
                       disabled={!oem.selected}
                       placeholder="Supplier Code"
                       value={oem.supplier_code}
@@ -1376,7 +1422,8 @@ export default function ClientOnboardingIATF({
                   >
                     {/* Customer Name */}
                     <Input
-                      className="col-span-5"
+                    
+                      className=" hover:text-black col-span-5"
                       placeholder="Customer Name"
                       value={o.name}
                       onChange={(e) =>
@@ -1386,7 +1433,7 @@ export default function ClientOnboardingIATF({
 
                     {/* Supplier Code */}
                     <Input
-                      className="col-span-5"
+                      className="col-span-5 hover:text-black"
                       placeholder="Supplier Code"
                       value={o.supplier_code}
                       onChange={(e) =>
@@ -1477,7 +1524,7 @@ export default function ClientOnboardingIATF({
         <Button
           onClick={handleSubmit}
           disabled={loading}
-           className="w-full text-lg py-6 rounded-2xl border border-white cursor-pointer hover:bg-gray-700  font-semibold shadow-md"
+          className="w-full text-lg py-6 rounded-2xl border border-white cursor-pointer hover:bg-gray-700  font-semibold shadow-md"
         >
           {loading ? "Submitting..." : "Submit IATF Application"}
         </Button>

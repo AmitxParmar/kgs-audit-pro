@@ -11,6 +11,8 @@ export interface ClientInput {
   manufacturing_sites?: any[]
   remote_locations?: any[]
    application_type?: string
+
+   application?: any
 }
 
 export const clientService = {
@@ -38,30 +40,56 @@ export const clientService = {
       if (clientError) throw clientError
 
       const clientId = client.id
+      const app = data.application || {}
 
       // =============================
       // 2️⃣ CREATE APPLICATION
       // =============================
-      const { data: application, error: appError } = await supabase
-        .from('application_master')
-        .insert({
-          client_id: clientId,
-          application_type: data.application_type,
-          standard: data.industry || 'General',
-          type_of_audit: 'Registration Audit',
-          product_design_responsibility: 'Client Responsible',
-          mailing_address: data.address || '',
-          registration_site_address: data.address || '',
-          manufacturing_sites: data.manufacturing_sites || [],
-          remote_locations: data.remote_locations || [],
-          working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-          shifts: [{ start: '08:00', end: '16:00' }],
-          status: 'pending',
-          last_action_by: userId,
-          last_action_role: 'cb_admin',
-        })
-        .select()
-        .single()
+    const { data: application, error: appError } = await supabase
+  .from('application_master')
+  .insert({
+    client_id: clientId,
+    application_type: data.application_type,
+
+    // ✅ FROM FRONTEND
+    standard: app.applicable_standards?.join(", ") || 'General',
+    type_of_audit: app.type_of_audit,
+     attachment_base64: app.attachment_base64,
+    product_design_responsibility: app.product_design_responsibility,
+
+    mailing_address: data.address || '',
+    registration_site_address: data.address || '',
+
+    manufacturing_sites: app.manufacturing_sites || [],
+    remote_locations: app.remote_locations || [],
+
+    iaf_code: app.iaf_code,
+    nace_code: app.nace_code,
+    sic_code: app.sic_code,
+
+    languages_spoken: app.languages_spoken,
+    shifts: app.shifts,
+
+    legal_obligations: app.legal_obligations,
+    legal_obligation_details: app.legal_obligation_details,
+
+    previous_iatf_certified: app.previous_iatf_certified,
+
+    automotive_customers: app.automotive_customers,
+    iatf_oem_customers: app.iatf_oem_customers,
+    other_oem_customers: app.other_oem_customers,
+
+    proposed_scope: app.proposed_scope,
+    outsourced_processes: app.outsourced_processes,
+
+    working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+
+    status: 'application_received',
+    last_action_by: userId,
+    last_action_role: 'cb_admin',
+  })
+  .select()
+  .single()
 
       if (appError) throw appError
 
