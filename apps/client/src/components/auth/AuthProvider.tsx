@@ -62,3 +62,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   return <>{children}</>
 }
+
+export function GuestRoute({ children }: ProtectedRouteProps) {
+  const { user, isLoading } = useAuthContext()
+
+  if (isLoading) return null
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
