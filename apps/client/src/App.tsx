@@ -3,7 +3,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { Dashboard } from "./pages/dashboards/Dashboard";
 import { Login } from "./pages/Login";
 import { ResetPassword } from "./pages/ResetPassword";
-import { ProtectedRoute, RoleRoute } from "./components/auth/AuthProvider";
+import { ProtectedRoute, RoleRoute, GuestRoute } from "./components/auth/AuthProvider";
 import { AdminRoutes } from "./pages/admin/AdminRoutes";
 import { ClientsPage } from "./pages/clients/ClientsPage";
 import ClientOnboarding from "./pages/clients/ClientOnboarding";
@@ -21,7 +21,7 @@ function App() {
         <Toaster position="top-center" reverseOrder={false} />
      <Routes>
   {/* Auth */}
-  <Route path="/login" element={<Login />} />
+  <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
   <Route path="/reset-password" element={<ResetPassword />} />
 
   {/* Protected Layout */}
