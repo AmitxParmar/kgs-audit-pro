@@ -3,17 +3,23 @@ import { supabase } from '../lib/supabase'
 const API_URL = import.meta.env.VITE_API_URL
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession()
 
-  const token = session?.access_token
+  // ✅ Get token from Supabase
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (!token) {
+    throw new Error("User not logged in")
+  }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`, // ✅ VERY IMPORTANT
       ...(options.headers || {}),
     },
+    credentials: 'include',
   })
 
   if (!res.ok) {
