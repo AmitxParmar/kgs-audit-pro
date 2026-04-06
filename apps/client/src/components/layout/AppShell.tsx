@@ -188,7 +188,7 @@ export function AppShell() {
         </div>
 
         {/* PAGE CONTENT */}
-        <div className="flex-1 overflow-auto p-6 bg-gradient-to-b from-slate-950 to-slate-950/80">
+        <div className="flex-1 overflow-auto bg-gradient-to-b from-slate-950 to-slate-950/80">
           <Outlet context={{ ctx }} />
         </div>
       </div>

@@ -24,10 +24,6 @@ function App() {
   <Route path="/login" element={<Login />} />
   <Route path="/reset-password" element={<ResetPassword />} />
 
-  {/* Public */}
-  <Route path="/audit-schedule" element={<AuditSchedule />} />
-  <Route path="/iaf-schedule" element={<IafSchedule />} />
-
   {/* Protected Layout */}
   <Route
     path="/"
@@ -37,11 +33,14 @@ function App() {
       </ProtectedRoute>
     }
   >
-   
+
     <Route index element={<Dashboard />} />
 
     <Route path="clients" element={<ClientsPage />} />
     <Route path="clients/onboard" element={<ClientOnboarding />} />
+
+    <Route path="audit-schedule" element={<AuditSchedule />} />
+    <Route path="iaf-schedule" element={<IafSchedule />} />
 
     <Route path="audit-reports" element={<AuditReports />} />
 
