@@ -1,40 +1,32 @@
 import { Request, Response } from 'express'
-import { AuthenticatedRequest } from '../../middleware/auth'
 import { clientService } from './service'
 import { supabase } from '../../config/supabase'
 
+// ✅ GET ALL CLIENTS
 export const getClients = async (req: Request, res: Response) => {
   try {
-    
+    const { data, error } = await supabase
+      .from('clients')
+      .select(`
+        *,
+        application_master (*)
+      `)
+      .order('onboarded_at', { ascending: false });
 
-   const { data, error } = await supabase
-  .from('clients')
-.select(`
-  *,
-  application_master (*)
-`)
-  .order('onboarded_at', { ascending: false });
+    if (error) throw error;
 
-    if (error) {
-      
-      throw error;
-    }
-
-    
-
-    res.json(data);
+    return res.json(data);
   } catch (error: any) {
-   
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
-export const createClient = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+// ✅ CREATE CLIENT
+export const createClient = async (req: Request, res: Response) => {
   try {
-    
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     const userId = req.user.id;
     const cb_id = req.user.cb_id;
@@ -45,20 +37,19 @@ export const createClient = async (
       cb_id
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Client onboarded successfully',
       data: result,
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to onboard client',
       error: error.message,
     });
   }
 };
-
 
 // ✅ GET CLIENT BY ID
 export const getClientById = async (req: Request, res: Response) => {
@@ -67,57 +58,54 @@ export const getClientById = async (req: Request, res: Response) => {
       .from('clients')
       .select('*')
       .eq('id', req.params.id)
-      .single()
+      .single();
 
-    if (error) throw error
+    if (error) throw error;
 
-    res.json(data)
+    return res.json(data);
   } catch (error: any) {
-    res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: error.message });
   }
-}
+};
 
 // ✅ UPDATE CLIENT
-export const updateClient = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+export const updateClient = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('clients')
       .update(req.body)
       .eq('id', req.params.id)
       .select()
-      .single()
+      .single();
 
-    if (error) throw error
+    if (error) throw error;
 
-    res.json(data)
+    return res.json(data);
   } catch (error: any) {
-    res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: error.message });
   }
-}
+};
 
+// ✅ UPDATE APPLICATION STAGE
 export const updateApplicationStage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-     const { status, note, review_document } = req.body;
-     const allowedStatuses = [
-  "application_received",
-  "application_review",
-  "contract_creation",
-  "contract_review",
-  "contract_sent",
-  "contract_signed",
-  "completed",
-];
+    const { status, note, review_document } = req.body;
 
-if (!allowedStatuses.includes(status)) {
-  console.log("INVALID STATUS RECEIVED:", status);
-  throw new Error(`Invalid status: ${status}`);
-}
+    const allowedStatuses = [
+      "application_received",
+      "application_review",
+      "contract_creation",
+      "contract_review",
+      "contract_sent",
+      "contract_signed",
+      "completed",
+    ];
 
-    // 1️⃣ Get current application
+    if (!allowedStatuses.includes(status)) {
+      throw new Error(`Invalid status: ${status}`);
+    }
+
     const { data: existingApp, error: fetchError } = await supabase
       .from("application_master")
       .select("client_id, status")
@@ -127,12 +115,12 @@ if (!allowedStatuses.includes(status)) {
     if (fetchError) throw fetchError;
 
     const clientId = existingApp.client_id;
-    const fromStatus =
-  existingApp.status === "pending"
-    ? "application_received"
-    : existingApp.status;
 
-    // 2️⃣ Update application_master
+    const fromStatus =
+      existingApp.status === "pending"
+        ? "application_received"
+        : existingApp.status;
+
     const { data: updatedApp, error: appError } = await supabase
       .from("application_master")
       .update({
@@ -147,17 +135,13 @@ if (!allowedStatuses.includes(status)) {
 
     if (appError) throw appError;
 
-    // 3️⃣ Update clients table
     const { error: clientError } = await supabase
       .from("clients")
-      .update({
-        status,
-      })
+      .update({ status })
       .eq("id", clientId);
 
     if (clientError) throw clientError;
 
-    // 4️⃣ Insert into onboarding_history
     const { error: historyError } = await supabase
       .from("onboarding_history")
       .insert({
@@ -169,19 +153,19 @@ if (!allowedStatuses.includes(status)) {
 
     if (historyError) throw historyError;
 
-    // ✅ Final response
-    res.json(updatedApp);
+    return res.json(updatedApp);
   } catch (error: any) {
-    console.error("UPDATE STAGE ERROR:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
-export const createContract = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+// ✅ CREATE CONTRACT
+export const createContract = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const userId = req.user.id;
 
     const {
@@ -193,7 +177,6 @@ export const createContract = async (
       pdf_base64,
     } = req.body;
 
-    // 1️⃣ Get application + client
     const { data: app, error: appError } = await supabase
       .from("application_master")
       .select("client_id, status")
@@ -205,16 +188,15 @@ export const createContract = async (
     const clientId = app.client_id;
     const fromStatus = app.status;
 
-    // 2️⃣ INSERT INTO contract_master
     const { data: contract, error: contractError } = await supabase
       .from("contract_master")
       .insert({
         client_id: clientId,
         application_id,
         contract_number,
-         start_date: start_date || null, 
-    end_date: end_date || null,  
-        status: "contract_draft", 
+        start_date: start_date || null,
+        end_date: end_date || null,
+        status: "contract_draft",
         contract_status: "draft",
         created_by: userId,
         review_notes: notes,
@@ -225,7 +207,6 @@ export const createContract = async (
 
     if (contractError) throw contractError;
 
-    // 3️⃣ UPDATE application_master
     const { error: appUpdateError } = await supabase
       .from("application_master")
       .update({
@@ -236,17 +217,13 @@ export const createContract = async (
 
     if (appUpdateError) throw appUpdateError;
 
-    // 4️⃣ UPDATE clients
     const { error: clientError } = await supabase
       .from("clients")
-      .update({
-        status: "contract_review",
-      })
+      .update({ status: "contract_review" })
       .eq("id", clientId);
 
     if (clientError) throw clientError;
 
-    // 5️⃣ INSERT onboarding_history
     const { error: historyError } = await supabase
       .from("onboarding_history")
       .insert({
@@ -259,9 +236,8 @@ export const createContract = async (
 
     if (historyError) throw historyError;
 
-    res.status(201).json(contract);
+    return res.status(201).json(contract);
   } catch (error: any) {
-    console.error("CREATE CONTRACT ERROR:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
