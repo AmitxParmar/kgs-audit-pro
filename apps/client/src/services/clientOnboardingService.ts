@@ -7,3 +7,9 @@ export const clientOnboardingService = {
       body: JSON.stringify(payload),
     }),
 };
+
+export const updateApplicationStatus = (id: string, payload: any) =>
+  apiFetch(`/api/client-onboarding/application/${id}/status`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });

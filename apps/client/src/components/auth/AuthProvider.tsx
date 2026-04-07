@@ -1,4 +1,4 @@
-// src/components/auth/AuthProvider.tsx
+
 import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthContext } from '../../context/AuthContext'
@@ -13,12 +13,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { isLoading } = useAuthContext()
   const isPublic = PUBLIC_PATHS.includes(window.location.pathname)
 
+  
   if (isLoading && !isPublic) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return null
   }
 
   return <>{children}</>
@@ -33,7 +30,11 @@ export function RoleRoute({ children, allowedRoles }: RoleRouteProps) {
   const { user, isLoading } = useAuthContext()
 
   if (isLoading) return null
-  if (!user) return <Navigate to="/login" replace />
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
   if (!user.role || !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />
   }
@@ -48,17 +49,14 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuthContext()
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
+ 
+  if (isLoading) return null
 
+ 
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
+ 
   return <>{children}</>
 }

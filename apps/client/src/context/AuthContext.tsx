@@ -1,59 +1,75 @@
-// src/context/AuthContext.tsx
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { authService, AuthUser } from '../lib/auth'
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { authService, AuthUser } from "../lib/auth";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextValue {
-  user: AuthUser | null
-  isLoading: boolean
+  user: AuthUser | null;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, isLoading: true })
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  isLoading: true,
+});
 
 export function AuthContextProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient()
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
-    const initAuth = async () => {
-      try {
-        const sessionUser = await authService.getSession()
-        if (!mounted) return
-        setUser(sessionUser)
-        queryClient.setQueryData(['auth', 'user'], sessionUser)
-      } catch (err) {
-        console.error('Auth init error:', err)
-      } finally {
-        if (mounted) setIsLoading(false)
+    // Get current session
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+
+      const session = data.session;
+
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name,
+          role: session.user.user_metadata?.role || "staff",
+        });
       }
-    }
 
-    initAuth()
+      setIsLoading(false);
+    });
 
-    // Only ONE subscription for the entire app
-    const { data } = authService.onAuthStateChange((authUser) => {
-      if (!mounted) return
-      setUser(authUser)
-      setIsLoading(false)
-      queryClient.setQueryData(['auth', 'user'], authUser)
-    })
+    // Listen for auth state changes
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name,
+          role: session.user.user_metadata?.role || "staff",
+        });
+      } else {
+        setUser(null);
+      }
+
+      setIsLoading(false);
+    });
 
     return () => {
-      mounted = false
-      data.subscription.unsubscribe()
-    }
-  }, [queryClient])
+      mounted = false;
+      data.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoading }}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuthContext() {
-  return useContext(AuthContext)
+  return useContext(AuthContext);
 }

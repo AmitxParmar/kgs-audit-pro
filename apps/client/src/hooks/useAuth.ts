@@ -3,7 +3,7 @@ import { authService, AuthUser } from '../lib/auth'
 import { useAuthContext } from '../context/AuthContext'
 
 export function useAuth() {
-  const { user, isLoading } = useAuthContext()
+  const { user, isLoading, isProfileLoading } = useAuthContext()
   const queryClient = useQueryClient()
 
   // ── Login ──────────────────────────────────────────────────────────────
@@ -50,6 +50,7 @@ export function useAuth() {
   return {
     user,
     isLoading,
+    isProfileLoading,
     login:               loginMutation.mutateAsync,
     signup:              signupMutation.mutateAsync,
     resetPassword:       resetPasswordMutation.mutateAsync,
