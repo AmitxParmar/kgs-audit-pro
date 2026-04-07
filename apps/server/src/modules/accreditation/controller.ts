@@ -1,11 +1,11 @@
 import { Request, Response } from 'express'
-import { AuthenticatedRequest } from '../../middleware/auth'
+
 import { DocumentRepositoryService } from './documentService'
 import { supabaseAdmin } from '../../config/supabase'
 
 const documentService = new DocumentRepositoryService()
 
-export const upload = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const upload = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' })
@@ -30,7 +30,7 @@ export const upload = async (req: AuthenticatedRequest, res: Response): Promise<
   }
 }
 
-export const addExternalLink = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const addExternalLink = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await documentService.addExternalLink({
       cbId: req.user!.cb_id,
@@ -49,7 +49,7 @@ export const addExternalLink = async (req: AuthenticatedRequest, res: Response):
   }
 }
 
-export const getMasterList = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const getMasterList = async (req: Request, res: Response): Promise<void> => {
   try {
     const { docType } = req.query
     const result = await documentService.getMasterList(
@@ -102,7 +102,7 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
-export const getRecycleBin = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const getRecycleBin = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await documentService.getRecycleBin(req.user!.cb_id)
     res.json(result)
