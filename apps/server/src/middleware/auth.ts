@@ -10,14 +10,7 @@ declare global {
   }
 }
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string
-    email: string
-    role: string
-    cb_id: string
-  }
-}
+
 
 export async function authenticate(
   req: Request, res: Response, next: NextFunction
