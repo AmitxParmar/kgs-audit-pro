@@ -13,8 +13,10 @@ export type ReportStatusRowProps = {
   auditor: string;
   date: string;
   workflowSteps: WorkflowStep[];
-  status: AuditReportStatus;
+  status: string;
 };
+
+import StatusBubble from "./StatusBubble";
 
 const auditTypePillColors: Record<string, string> = {
   registration: "bg-blue-500/15 text-blue-300 border-blue-400/20",
@@ -70,6 +72,7 @@ export default function ReportStatusRow({
   auditor,
   date,
   workflowSteps,
+  status,
 }: ReportStatusRowProps) {
   const auditTypePill =
     auditTypePillColors[auditSubType.toLowerCase()] ??
@@ -86,6 +89,7 @@ export default function ReportStatusRow({
           >
             {auditSubType}
           </span>
+          <StatusBubble status={status} />
         </div>
 
         <div className="flex items-center gap-4 shrink-0 text-xs text-slate-400">
@@ -111,11 +115,11 @@ export default function ReportStatusRow({
       </div>
 
       {/* Workflow steps */}
-      <div className="flex items-end gap-3 overflow-x-auto pb-1">
+      <div className="flex items-start gap-4 overflow-x-auto pb-1">
         {workflowSteps.map((step, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5 min-w-[60px]">
+          <div key={i} className="flex flex-col items-center gap-1.5 min-w-[72px]">
             <StepCircle step={step} />
-            <span className="text-[10px] text-center text-slate-500 leading-tight max-w-[60px]">
+            <span className="text-[10px] text-center text-slate-500 leading-tight max-w-[72px]">
               {step.label}
             </span>
           </div>
