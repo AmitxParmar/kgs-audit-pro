@@ -1,61 +1,57 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { Dashboard } from "./pages/dashboards/Dashboard";
-import { Login } from "./pages/Login";
-import { ResetPassword } from "./pages/ResetPassword";
-import { ProtectedRoute, RoleRoute, GuestRoute } from "./components/auth/AuthProvider";
+import {
+  ProtectedRoute,
+  RoleRoute,
+} from "./features/auth/AuthProvider";
 import { AdminRoutes } from "./pages/admin/AdminRoutes";
-import { ClientsPage } from "./pages/clients/ClientsPage";
-import ClientOnboarding from "./pages/clients/ClientOnboarding";
+import { ClientsPage, ClientOnboarding } from "./features/client-onboarding";
 import { Toaster } from "react-hot-toast";
-
-import AuditSchedule from "./pages/audit-schedule/AuditSchedule";
-import IafSchedule from "./pages/audit-schedule/IAFSchedule";
-import AuditReports from "./pages/audit-reports/AuditReports";
+import AuditReports from "./features/audit-reports";
+import { AuthRoutes } from "./features/auth/routes/AuthRoutes";
+import AuditSchedule from "./features/audit-schedule/AuditSchedule";
+import IafSchedule from "./features/iaf-schedule/components/IAFSchedule";
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-center" reverseOrder={false} />
+      <Routes>
+        {/* Auth */}
+        {AuthRoutes()}
+        <Route path="login" element={<Navigate to="/" replace />} />
 
-        <Toaster position="top-center" reverseOrder={false} />
-     <Routes>
-  {/* Auth */}
-  <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
-  <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Protected Layout */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<Dashboard />} />
 
-  {/* Protected Layout */}
-  <Route
-    path="/"
-    element={
-      <ProtectedRoute>
-        <AppShell />
-      </ProtectedRoute>
-    }
-  >
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/onboard" element={<ClientOnboarding />} />
 
-    <Route index element={<Dashboard />} />
+          <Route path="audit-schedule" element={<AuditSchedule />} />
+          <Route path="iaf-schedule" element={<IafSchedule />} />
 
-    <Route path="clients" element={<ClientsPage />} />
-    <Route path="clients/onboard" element={<ClientOnboarding />} />
+          <Route path="audit-reports" element={<AuditReports />} />
 
-    <Route path="audit-schedule" element={<AuditSchedule />} />
-    <Route path="iaf-schedule" element={<IafSchedule />} />
+          <Route
+            path="admin/*"
+            element={
+              <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
+                <AdminRoutes />
+              </RoleRoute>
+            }
+          />
 
-    <Route path="audit-reports" element={<AuditReports />} />
-
-    <Route
-      path="admin/*"
-      element={
-        <RoleRoute allowedRoles={["super_admin", "cb_admin"]}>
-          <AdminRoutes />
-        </RoleRoute>
-      }
-    />
-
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Route>
-</Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
     </div>
   );
 }

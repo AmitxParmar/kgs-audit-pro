@@ -1,7 +1,7 @@
 // src/components/layout/AppShell.tsx
 import { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/shared/hooks/useAuth";
 import type { ReactNode } from "react";
 
 export function AppShell() {

@@ -1,63 +1,131 @@
-import axios from 'axios';
 import { supabase } from '../lib/supabase';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add a request interceptor to include the auth token
-api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
-  return config;
-});
 
 export const auditReportService = {
   getStats: async () => {
-    const { data } = await api.get('/api/audit-report/stats');
-    return data.data;
+    const { data, error } = await supabase
+      .from("audits")
+      .select("status");
+
+    if (error) throw error;
+
+    // Aggregate counts by status
+    const stats: Record<string, number> = {};
+    data.forEach((audit) => {
+      stats[audit.status] = (stats[audit.status] || 0) + 1;
+    });
+
+    return stats;
   },
 
-  getGroupedAudits: async (params?: any) => {
-    const { data } = await api.get('/api/audit-report/grouped', { params });
-    return data.data;
+  getGroupedAudits: async (filters?: {
+    clientId?: string;
+    cbId?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+  }, limit?: number) => {
+    let query = supabase.from("audits").select(`
+      *,
+      client:client_id(name),
+      lead_auditor:lead_auditor_id(full_name),
+      standard:standard_id(code)
+    `);
+
+    if (filters?.clientId) query = query.eq("client_id", filters.clientId);
+    if (filters?.cbId) query = query.eq("cb_id", filters.cbId);
+    if (filters?.status) query = query.eq("status", filters.status);
+    if (filters?.fromDate) query = query.gte("planned_date", filters.fromDate);
+    if (filters?.toDate) query = query.lte("planned_date", filters.toDate);
+    if (limit) query = query.limit(limit);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const grouped: Record<string, any[]> = {};
+    data.forEach((audit) => {
+      if (!grouped[audit.status]) grouped[audit.status] = [];
+      grouped[audit.status].push(audit);
+    });
+
+    return grouped;
   },
 
   getAuditById: async (id: string) => {
-    const { data } = await api.get(`/api/audit-report/${id}`);
-    return data.data;
+    const { data, error } = await supabase
+      .from("audits")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   createAudit: async (payload: any) => {
-    const { data } = await api.post('/api/audit-report', payload);
-    return data.data;
+    const { data, error } = await supabase
+      .from("audits")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   getStandards: async () => {
-    const { data } = await api.get('/api/audit-report/standards');
-    return data.data;
+    const { data, error } = await supabase
+      .from("audit_standards")
+      .select("id, code")
+      .order("code");
+    if (error) throw error;
+    return data;
   },
 
   getAuditors: async () => {
-    const { data } = await api.get('/api/audit-report/auditors');
-    return data.data;
+    const { data, error } = await supabase
+      .from("auditor_profiles")
+      .select(`
+        id,
+        user:user_id (
+          full_name,
+          email
+        )
+      `)
+      .order("user_id");
+
+    if (error) throw error;
+    
+    // Flatten the result to match the expected UI structure
+    return data.map((profile: any) => ({
+      id: profile.id,
+      full_name: profile.user?.full_name || "Unknown",
+      email: profile.user?.email || "N/A"
+    }));
   },
 
   getClients: async () => {
-    const { data } = await api.get('/api/client-onboarding');
-    // client-onboarding returns a plain array, not the { data } wrapper
+    const { data, error } = await supabase
+      .from('clients')
+      .select(`
+        *,
+        application_master (
+          application_type,
+          status
+        )
+      `)
+      .order('onboarded_at', { ascending: false });
+
+    if (error) throw error;
     return data;
   },
-//TODO: separate this later into separate query (eg. cb-queries.ts)
+
   getCertificationBodies: async () => {
-    const { data } = await api.get('/api/certification-bodies');
-    return data.data;
+    const { data, error } = await supabase
+      .from("certification_bodies")
+      .select("id, name, accred_no, country, status")
+      .order("name");
+
+    if (error) throw error;
+    return data;
   },
 };
