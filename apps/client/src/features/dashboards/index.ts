@@ -1,4 +1,4 @@
-// apps/client/src/pages/dashboards/index.ts
+export { Dashboard } from './Dashboard'
 export { SuperAdminDashboard }    from './SuperAdminDashboard'
 export { CbAdminDashboard }       from './CbAdminDashboard'
 export { LeadAuditorDashboard }   from './LeadAuditorDashboard'

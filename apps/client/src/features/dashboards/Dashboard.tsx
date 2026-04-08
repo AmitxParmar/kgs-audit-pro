@@ -1,5 +1,5 @@
 // apps/client/src/pages/Dashboard.tsx  ← replace existing file
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '@/shared/hooks/useAuth'
 import { SuperAdminDashboard }    from './SuperAdminDashboard'
 import { CbAdminDashboard }       from './CbAdminDashboard'
 
@@ -46,4 +46,4 @@ export function Dashboard() {
 
   const RoleDashboard = DASHBOARD_MAP[role as keyof typeof DASHBOARD_MAP]
   return <RoleDashboard />
-}
+}

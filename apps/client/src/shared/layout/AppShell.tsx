@@ -85,9 +85,9 @@ export function AppShell() {
             icon={<IconClientOnboarding />}
           />
           <NavItem
-            to="/admin/users"
+            to="/auditor-enrollment"
             label="Auditor Enrollment"
-            active={isActive("/admin")}
+            active={isActive("/auditor-enrollment")}
             collapsed={sidebarCollapsed}
             icon={<IconAuditor />}
           />

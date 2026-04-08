@@ -1,17 +1,20 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AppShell } from "./components/layout/AppShell";
-import { Dashboard } from "./pages/dashboards/Dashboard";
+import { Toaster } from "react-hot-toast";
+import { AppShell } from "./shared/layout/AppShell";
 import {
+  Dashboard,
   ProtectedRoute,
   RoleRoute,
-} from "./features/auth/AuthProvider";
-import { AdminRoutes } from "./pages/admin/AdminRoutes";
-import { ClientsPage, ClientOnboarding } from "./features/client-onboarding";
-import { Toaster } from "react-hot-toast";
-import AuditReports from "./features/audit-reports";
-import { AuthRoutes } from "./features/auth/routes/AuthRoutes";
-import AuditSchedule from "./features/audit-schedule/AuditSchedule";
-import IafSchedule from "./features/iaf-schedule/components/IAFSchedule";
+  AuthRoutes,
+  AdminRoutes,
+  ClientsPage,
+  ClientOnboarding,
+  AuditReports,
+  AuditSchedule,
+  IafSchedule,
+  Certification,
+  AuditorEnrollment,
+} from "./features";
 
 function App() {
   return (
@@ -35,10 +38,13 @@ function App() {
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/onboard" element={<ClientOnboarding />} />
 
+          <Route path="auditor-enrollment" element={<AuditorEnrollment />} />
+
           <Route path="audit-schedule" element={<AuditSchedule />} />
           <Route path="iaf-schedule" element={<IafSchedule />} />
 
           <Route path="audit-reports" element={<AuditReports />} />
+          <Route path="certification" element={<Certification />} />
 
           <Route
             path="admin/*"
