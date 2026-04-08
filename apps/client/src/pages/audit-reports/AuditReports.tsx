@@ -1,14 +1,17 @@
-// src/pages/audit-reports/AuditReports.tsx
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Document from "../audit-schedule/Document";
 import Notification from "../audit-schedule/Notification";
 import StatCard from "../../components/audit-reports/StatCard";
 import StageFilterCard from "../../components/audit-reports/StageFilterCard";
 import SearchBar from "../../components/audit-reports/SearchBar";
 import ReportStatusRow, {
-  type AuditReportStatus,
   type WorkflowStep,
 } from "../../components/audit-reports/ReportStatusRow";
+import { useGroupedAudits, useAuditStats } from "../../queries/audit-reports-queries";
+import { STATUS_MAP } from "../../components/audit-reports/StatusBubble";
+import { getUiStage } from "../../components/audit-reports/statusStageMapping";
+import { NewAuditReportDialog } from "../../components/audit-reports/NewAuditReportDialog";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type RightPanelTab = "documents" | "alerts";
@@ -20,7 +23,7 @@ type AuditReport = {
   auditor: string;
   date: string;
   workflowSteps: WorkflowStep[];
-  status: AuditReportStatus;
+  status: string;
 };
 
 type StageKey =
@@ -32,126 +35,57 @@ type StageKey =
   | "certification"
   | "rejected";
 
-/* ── Mock data ──────────────────────────────────────────────────────────── */
-const AUDIT_REPORTS: AuditReport[] = [
-  {
-    id: "1",
-    companyName: "NOVA",
-    auditSubType: "registration",
-    auditor: "Robert Wilson",
-    date: "Feb 16, 2026",
-    status: "completed",
-    workflowSteps: [
-      { label: "Draft Report", status: "done" },
-      { label: "Technical Review", status: "done" },
-      { label: "IATF Update", status: "done" },
-      { label: "NC Management", status: "done" },
-      { label: "Certification", status: "done" },
-    ],
-  },
-  {
-    id: "2",
-    companyName: "TechCorp Inc",
-    auditSubType: "surveillance",
-    auditor: "Sarah Johnson",
-    date: "Mar 22, 2026",
-    status: "in-progress",
-    workflowSteps: [
-      { label: "Draft Report", status: "done" },
-      { label: "Technical Review", status: "active" },
-      { label: "IATF Update", status: "pending" },
-      { label: "NC Management", status: "pending" },
-      { label: "Certification", status: "pending" },
-    ],
-  },
-  {
-    id: "3",
-    companyName: "AutoParts Ltd",
-    auditSubType: "recertification",
-    auditor: "Michael Chen",
-    date: "Apr 01, 2026",
-    status: "draft",
-    workflowSteps: [
-      { label: "Draft Report", status: "done" },
-      { label: "Technical Review", status: "pending" },
-      { label: "IATF Update", status: "pending" },
-      { label: "NC Management", status: "pending" },
-      { label: "Certification", status: "pending" },
-    ],
-  },
-  {
-    id: "4",
-    companyName: "GlobalSteel Co",
-    auditSubType: "surveillance",
-    auditor: "Priya Sharma",
-    date: "Apr 05, 2026",
-    status: "in-progress",
-    workflowSteps: [
-      { label: "Draft Report", status: "done" },
-      { label: "Technical Review", status: "done" },
-      { label: "IATF Update", status: "active" },
-      { label: "NC Management", status: "pending" },
-      { label: "Certification", status: "pending" },
-    ],
-  },
-  {
-    id: "5",
-    companyName: "MedDevice GmbH",
-    auditSubType: "registration",
-    auditor: "Robert Wilson",
-    date: "Jan 10, 2026",
-    status: "completed",
-    workflowSteps: [
-      { label: "Draft Report", status: "done" },
-      { label: "Technical Review", status: "done" },
-      { label: "IATF Update", status: "done" },
-      { label: "NC Management", status: "done" },
-      { label: "Certification", status: "done" },
-    ],
-  },
+// Mock data removed in favor of real API data
+
+const STAGE_ORDER = [
+  "Draft Report",
+  "Technical Review",
+  "IATF Update",
+  "NC Management",
+  "Certification",
 ];
 
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
-const STATUS_LABEL: Record<AuditReportStatus, string> = {
-  completed: "Audit Report Completed",
-  "in-progress": "In Progress",
-  draft: "Draft",
-  rejected: "Rejected",
+const STAGE_MAP_REVERSE: Record<string, string> = {
+  "draft": "Draft Report",
+  "tech-review": "Technical Review",
+  "iatf-update": "IATF Update",
+  "nc-management": "NC Management",
+  "certification": "Certification",
 };
 
-const STATUS_BANNER: Record<AuditReportStatus, string> = {
-  completed: "bg-emerald-900/30 border-emerald-400/20 text-emerald-300",
-  "in-progress": "bg-blue-900/30 border-blue-400/20 text-blue-300",
-  draft: "bg-white/5 border-white/10 text-slate-400",
-  rejected: "bg-rose-900/20 border-rose-400/20 text-rose-300",
-};
+function transformAudit(apiAudit: any): AuditReport {
+  const currentStage = getUiStage(apiAudit.status);
+  const currentIndex = STAGE_ORDER.indexOf(currentStage);
 
-function groupByStatus(reports: AuditReport[]): [AuditReportStatus, AuditReport[]][] {
-  const order: AuditReportStatus[] = ["completed", "in-progress", "draft", "rejected"];
-  const map: Record<string, AuditReport[]> = {};
-  for (const r of reports) {
-    (map[r.status] ??= []).push(r);
-  }
-  return order.filter((s) => map[s]?.length).map((s) => [s, map[s]]);
+  const workflowSteps = STAGE_ORDER.map((label, index) => {
+    let status: "done" | "active" | "pending" = "pending";
+    if (index < currentIndex) {
+      status = "done";
+    } else if (index === currentIndex) {
+      status = "active";
+    }
+    return { label, status };
+  });
+
+  return {
+    id: apiAudit.id,
+    companyName: apiAudit.client?.name || "Unknown Client",
+    auditSubType: apiAudit.standard?.code || "Audit",
+    auditor: apiAudit.lead_auditor?.full_name || "Unassigned",
+    date: apiAudit.planned_date || "TBD",
+    status: apiAudit.status,
+    workflowSteps,
+  };
 }
 
-function countByStage(reports: AuditReport[], stage: StageKey): number {
+function countByStage(reports: AuditReport[], stage: keyof typeof STAGE_MAP_REVERSE | "all" | "rejected"): number {
   if (stage === "all") return reports.length;
-  const stageIndexMap: Record<StageKey, number> = {
-    all: -1,
-    draft: 0,
-    "tech-review": 1,
-    "iatf-update": 2,
-    "nc-management": 3,
-    certification: 4,
-    rejected: -1,
-  };
-  if (stage === "rejected") return reports.filter((r) => r.status === "rejected").length;
-  const idx = stageIndexMap[stage];
-  return reports.filter((r) => {
-    const step = r.workflowSteps[idx];
-    return step && step.status !== "pending";
-  }).length;
+  if (stage === "rejected") return reports.filter((r) => r.status === "denied").length;
+  
+  const uiStage = STAGE_MAP_REVERSE[stage];
+  if (!uiStage) return 0;
+  
+  return reports.filter((r) => getUiStage(r.status) === uiStage).length;
 }
 
 /* ── Icons ─────────────────────────────────────────────────────────────── */
@@ -253,51 +187,92 @@ function IconX() {
 
 /* ── Page ─────────────────────────────────────────────────────────────── */
 export default function AuditReports() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [activeStage, setActiveStage] = useState<StageKey>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Search Param Read
+  const searchQ = searchParams.get("q") || "";
+  const statusFilter = searchParams.get("status") || "all";
+  const activeStage = (searchParams.get("stage") as StageKey) || "all";
+
+  // URL updater helper
+  const updateParam = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value && value !== "all") {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    setSearchParams(newParams);
+  };
+
+  // Local state for smooth typing on search input
+  const [searchInput, setSearchInput] = useState(searchQ);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchInput === searchQ) return;
+      updateParam("q", searchInput);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("documents");
   const [notificationsCount, setNotificationsCount] = useState(3);
+  
+  // Integrating fetch grouped audits with search input through the query key
+  const { data: groupedData, isLoading, isError } = useGroupedAudits({ 
+    search: searchQ, 
+    status: statusFilter === "all" ? undefined : statusFilter 
+  });
+  const { data: stats } = useAuditStats();
+
+  /* Process Data */
+  const allReports = useMemo(() => {
+    if (!groupedData) return [];
+    return Object.values(groupedData).flat().map(transformAudit);
+  }, [groupedData]);
 
   /* Derived counts */
-  const totalCases = AUDIT_REPORTS.length;
-  const openNCs = AUDIT_REPORTS.filter((r) => r.status === "in-progress").length;
-  const slaAtRisk = AUDIT_REPORTS.filter(
-    (r) => r.status === "in-progress" || r.status === "draft"
-  ).length;
-  const pendingCert = AUDIT_REPORTS.filter(
-    (r) => r.workflowSteps[4]?.status === "pending" && r.status !== "draft"
-  ).length;
+  const totalCases = stats ? Object.values(stats as Record<string, number>).reduce((a, b) => a + b, 0) : 0;
+  const openNCs = stats?.nc_raised || 0;
+  const slaAtRisk = (stats?.audit_in_progress || 0) + (stats?.report_under_review || 0);
+  const pendingCert = stats?.cert_decision || 0;
 
-  /* Filter reports */
-  const filteredReports = AUDIT_REPORTS.filter((r) => {
-    const q = search.trim().toLowerCase();
+  /* Filter reports (Client-side fast filtering as a fallback/additional layer over backend search) */
+  const filteredReports = allReports.filter((r) => {
+    // We already fetch dynamically using debouncedSearch, but keep local filtering consistent
+    // in case backend matching returns slightly broader results (or if backend search is offline)
+    const q = searchQ.trim().toLowerCase();
     const matchesSearch =
       !q ||
       r.companyName.toLowerCase().includes(q) ||
       r.auditor.toLowerCase().includes(q);
 
     const matchesStatus =
-      statusFilter === "All Status" ||
-      (statusFilter === "Completed" && r.status === "completed") ||
-      (statusFilter === "In Progress" && r.status === "in-progress") ||
-      (statusFilter === "Draft" && r.status === "draft") ||
-      (statusFilter === "Rejected" && r.status === "rejected");
+      statusFilter === "all" || r.status === statusFilter;
 
     const matchesStage =
       activeStage === "all" ||
-      (activeStage === "draft" && r.workflowSteps[0]?.status !== "pending") ||
-      (activeStage === "tech-review" && r.workflowSteps[1]?.status !== "pending") ||
-      (activeStage === "iatf-update" && r.workflowSteps[2]?.status !== "pending") ||
-      (activeStage === "nc-management" && r.workflowSteps[3]?.status !== "pending") ||
-      (activeStage === "certification" && r.workflowSteps[4]?.status === "done") ||
-      (activeStage === "rejected" && r.status === "rejected");
+      (STAGE_MAP_REVERSE[activeStage] && getUiStage(r.status) === STAGE_MAP_REVERSE[activeStage]) ||
+      (activeStage === "rejected" && r.status === "denied");
 
     return matchesSearch && matchesStatus && matchesStage;
   });
 
-  const grouped = groupByStatus(filteredReports);
+  const grouped = useMemo(() => {
+    const map: Record<string, AuditReport[]> = {};
+    for (const r of filteredReports) {
+      (map[r.status] ??= []).push(r);
+    }
+    return Object.entries(map).sort();
+  }, [filteredReports]);
+
+  // Derived dynamic status options
+  const statusOptions = useMemo(() => [
+    { value: "all", label: "All Statuses" },
+    ...Object.entries(STATUS_MAP).map(([val, { label }]) => ({ value: val, label }))
+  ], []);
 
   const headerTab = (t: RightPanelTab, label: string, icon: string, badge?: number) => {
     const isActive = rightPanelTab === t;
@@ -398,12 +373,7 @@ export default function AuditReports() {
                   </span>
                 )}
               </button>
-              <button
-                className="h-9 px-4 rounded-full border border-teal-500/30 bg-teal-500/15 hover:bg-teal-500/20 transition text-sm font-extrabold text-teal-100"
-                type="button"
-              >
-                + New Draft Report
-              </button>
+              <NewAuditReportDialog />
             </div>
           </header>
 
@@ -425,7 +395,7 @@ export default function AuditReports() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard
                 label="Active Cases"
-                value={totalCases - AUDIT_REPORTS.filter((r) => r.status === "completed").length}
+                value={totalCases - (stats?.cert_granted || 0)}
                 icon={<IconCalendar />}
                 tone="default"
               />
@@ -436,28 +406,47 @@ export default function AuditReports() {
 
             {/* ── Row 2: Stage filter cards ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              <StageFilterCard label="All Cases" count={countByStage(AUDIT_REPORTS, "all")} icon={<IconTrending />} active={activeStage === "all"} onClick={() => setActiveStage("all")} />
-              <StageFilterCard label="Draft Report" count={countByStage(AUDIT_REPORTS, "draft")} icon={<IconDoc />} active={activeStage === "draft"} onClick={() => setActiveStage("draft")} />
-              <StageFilterCard label="Tech Review" count={countByStage(AUDIT_REPORTS, "tech-review")} icon={<IconCheck />} active={activeStage === "tech-review"} onClick={() => setActiveStage("tech-review")} />
-              <StageFilterCard label="IATF Update" count={countByStage(AUDIT_REPORTS, "iatf-update")} icon={<IconDoc />} active={activeStage === "iatf-update"} onClick={() => setActiveStage("iatf-update")} />
-              <StageFilterCard label="NC Management" count={countByStage(AUDIT_REPORTS, "nc-management")} icon={<IconClock />} active={activeStage === "nc-management"} onClick={() => setActiveStage("nc-management")} />
-              <StageFilterCard label="Certification" count={countByStage(AUDIT_REPORTS, "certification")} icon={<IconUsers />} active={activeStage === "certification"} onClick={() => setActiveStage("certification")} />
-              <StageFilterCard label="Rejected" count={countByStage(AUDIT_REPORTS, "rejected")} icon={<IconX />} active={activeStage === "rejected"} onClick={() => setActiveStage("rejected")} />
+              <StageFilterCard label="All Cases" count={countByStage(allReports, "all")} icon={<IconTrending />} active={activeStage === "all"} onClick={() => updateParam("stage", "all")} />
+              <StageFilterCard label="Draft Report" count={countByStage(allReports, "draft")} icon={<IconDoc />} active={activeStage === "draft"} onClick={() => updateParam("stage", "draft")} />
+              <StageFilterCard label="Tech Review" count={countByStage(allReports, "tech-review")} icon={<IconCheck />} active={activeStage === "tech-review"} onClick={() => updateParam("stage", "tech-review")} />
+              <StageFilterCard label="IATF Update" count={countByStage(allReports, "iatf-update")} icon={<IconDoc />} active={activeStage === "iatf-update"} onClick={() => updateParam("stage", "iatf-update")} />
+              <StageFilterCard label="NC Management" count={countByStage(allReports, "nc-management")} icon={<IconClock />} active={activeStage === "nc-management"} onClick={() => updateParam("stage", "nc-management")} />
+              <StageFilterCard label="Certification" count={countByStage(allReports, "certification")} icon={<IconUsers />} active={activeStage === "certification"} onClick={() => updateParam("stage", "certification")} />
+              <StageFilterCard label="Rejected" count={countByStage(allReports, "rejected")} icon={<IconX />} active={activeStage === "rejected"} onClick={() => updateParam("stage", "rejected")} />
             </div>
 
             {/* ── Search bar ── */}
-            <SearchBar value={search} onChange={setSearch} status={statusFilter} onStatusChange={setStatusFilter} />
+            <SearchBar 
+              value={searchInput} 
+              onChange={setSearchInput} 
+              status={statusFilter} 
+              onStatusChange={(v) => updateParam("status", v)} 
+              statusOptions={statusOptions}
+              onReset={() => {
+                setSearchInput("");
+                setSearchParams(new URLSearchParams());
+              }} 
+            />
 
             {/* ── Grouped report list ── */}
-            {grouped.length === 0 ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center">
-                <p className="text-slate-500 text-sm">No audit reports match your filters.</p>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-10 w-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                <p className="text-slate-400 font-medium animate-pulse">Loading audit data...</p>
+              </div>
+            ) : isError ? (
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-8 text-center">
+                <p className="text-rose-300 text-sm">Failed to load audit reports. Please try again later.</p>
+              </div>
+            ) : grouped.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center text-slate-500">
+                <p className="text-sm">No audit reports match your filters.</p>
               </div>
             ) : (
               grouped.map(([status, reports]) => (
                 <div key={status} className="space-y-3">
-                  <div className={`rounded-xl border px-4 py-2.5 text-sm font-bold text-center ${STATUS_BANNER[status]}`}>
-                    {STATUS_LABEL[status]}
+                  <div className={`rounded-xl border px-4 py-2.5 text-sm font-bold text-center ${STATUS_MAP[status]?.className || "bg-white/5 border-white/10 text-slate-400"}`}>
+                    {STATUS_MAP[status]?.label || status}
                   </div>
                   {reports.map((report) => (
                     <ReportStatusRow
