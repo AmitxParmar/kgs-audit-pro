@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { AuthenticatedRequest } from '../../middleware/auth'
+
 import { createError } from '../../middleware/errorHandler'
 import { auditService } from './service'
 
@@ -12,7 +12,7 @@ export const getAudits = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
-export const createAudit = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const createAudit = async (req: Request, res: Response): Promise<void> => {
   try {
     const audit = await auditService.createAudit(req.body, req.user!.id)
     res.status(201).json(audit)
@@ -34,7 +34,7 @@ export const getAuditById = async (req: Request, res: Response): Promise<void> =
   }
 }
 
-export const updateAudit = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const updateAudit = async (req: Request, res: Response): Promise<void> => {
   try {
     const audit = await auditService.updateAudit(req.params.id, req.body, req.user!.id)
     res.json(audit)

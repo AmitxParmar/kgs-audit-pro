@@ -1,5 +1,6 @@
-import { auditReportService } from "@/services/auditReportService";
-import { useQuery } from "@tanstack/react-query";
+import { clientOnboardingService } from "@/services/clientOnboardingService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const STAGE_PROGRESS_MAP: Record<string, number> = {
   "Application Received": 14,
@@ -21,7 +22,7 @@ const STAGE_COUNT_MAP: Record<string, string> = {
   "Onboarding Complete": "Stage 7 of 7",
 };
 
-function mapStatus(status: string) {
+export function mapStatus(status: string) {
   switch (status) {
     case "pending":
     case "application_received":
@@ -43,28 +44,86 @@ function mapStatus(status: string) {
   }
 }
 
+// ✅ QUERY: GET CLIENTS
 export const useClients = () => {
-  return useQuery({
-    queryKey: ['clients-list'],
-    queryFn: auditReportService.getClients,
-    select: (data) => data.map((client: any) => {
-      const app = client.application_master?.[0];
-      const status = mapStatus(app?.status || "pending");
-      
-      return {
-        name: client.name,
-        code: `CLI-${client.id.slice(0, 6)}`,
-        email: client.contact_email,
-        phone: client.contact_phone,
-        date: `Created ${new Date(client.created_at).toLocaleDateString()}`,
-        scope: client.industry || "N/A",
-        stage: status,
-        progress: STAGE_PROGRESS_MAP[status] || 14,
-        stageCount: STAGE_COUNT_MAP[status] || "Stage 1 of 7",
-        type: app?.application_type
-          ? app.application_type.trim().toUpperCase()
-          : "IAF",
-      };
-    }),
+  return useQuery(
+    ['clients-list'],
+    clientOnboardingService.getClients,
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000,   // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+      select: (data) => data.map((client: any) => {
+        const app = Array.isArray(client.application_master) 
+          ? client.application_master[0] 
+          : client.application_master;
+          
+        const status = mapStatus(app?.status || "pending");
+        
+        return {
+          ...client,
+          code: `CLI-${client.id.slice(0, 6)}`,
+          date: `Created ${new Date(client.onboarded_at).toLocaleDateString()}`,
+          scope: client.industry || "N/A",
+          stage: status,
+          progress: STAGE_PROGRESS_MAP[status] || 14,
+          stageCount: STAGE_COUNT_MAP[status] || "Stage 1 of 7",
+          type: app?.application_type
+            ? app.application_type.trim().toUpperCase()
+            : "IAF",
+          application_id: app?.application_id,
+          application: app,
+          applications: app ? [{ application_id: app.application_id, status: app.status }] : [],
+          decisionNote: app?.scheme_comment || "",
+        };
+      }),
+    }
+  );
+};
+
+// ✅ MUTATION: ONBOARD CLIENT
+export const useOnboardClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => clientOnboardingService.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients-list'] });
+      toast.success("Client onboarded successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to onboard client");
+    }
   });
-};
+};
+
+// ✅ MUTATION: UPDATE STATUS
+export const useUpdateApplicationStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => 
+      clientOnboardingService.updateApplicationStatus(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients-list'] });
+      toast.success("Status updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update status");
+    }
+  });
+};
+
+// ✅ MUTATION: CREATE CONTRACT
+export const useCreateContract = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => clientOnboardingService.createContract(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients-list'] });
+      toast.success("Contract created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to create contract");
+    }
+  });
+};

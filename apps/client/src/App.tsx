@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import { Toaster } from "react-hot-toast";
 import { AppShell } from "./shared/layout/AppShell";
 import {
@@ -20,6 +21,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-center" reverseOrder={false} />
+
       <Routes>
         {/* Auth */}
         {AuthRoutes()}
@@ -33,6 +35,7 @@ function App() {
             </ProtectedRoute>
           }
         >
+          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
 
           <Route path="clients" element={<ClientsPage />} />

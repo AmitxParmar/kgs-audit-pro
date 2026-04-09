@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Mail, Phone, Calendar, Clock } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useClients } from "./api/client-queries";
+import { useClients, useCreateContract, useUpdateApplicationStatus } from "./api/client-queries";
 
 type ContextType = {
   ctx: "both" | "iatf" | "iaf";
@@ -30,25 +30,6 @@ const STANDARD_MASTER = {
   ],
 };
 
-const STAGE_PROGRESS_MAP: Record<string, number> = {
-  "Application Received": 14,
-  "Application Review": 28,
-  "Contract Creation": 42,
-  "Contract Review": 57,
-  "Contract Sent": 71,
-  "Contract Signed": 85,
-  "Onboarding Complete": 100,
-};
-
-const STAGE_COUNT_MAP: Record<string, string> = {
-  "Application Received": "Stage 1 of 7",
-  "Application Review": "Stage 2 of 7",
-  "Contract Creation": "Stage 3 of 7",
-  "Contract Review": "Stage 4 of 7",
-  "Contract Sent": "Stage 5 of 7",
-  "Contract Signed": "Stage 6 of 7",
-  "Onboarding Complete": "Stage 7 of 7",
-};
 
 
 export default function ClientsPage() {
@@ -56,21 +37,17 @@ export default function ClientsPage() {
 
   const [typeFilter, setTypeFilter] = useState<"ALL" | "IAF" | "IATF">("ALL");
   const [stageFilter, setStageFilter] = useState<string | null>(null);
-  const { data: serverClients, isLoading } = useClients();
-  const [clients, setClients] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (serverClients) {
-      setClients(serverClients);
-    }
-  }, [serverClients]);
+  const { data: clients = [], isLoading, isError, error } = useClients();
+  
+  const updateStatusMutation = useUpdateApplicationStatus();
+  const createContractMutation = useCreateContract();
 
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
 const [note, setNote] = useState("");
  const { ctx } = useOutletContext<ContextType>();
 const [decisionType, setDecisionType] = useState<string | null>(null);
 const [activeModal, setActiveModal] = useState<"review" | "contract" | null>(null);
-
+const [reviewFile, setReviewFile] = useState<File | null>(null);
 const [reason, setReason] = useState("");
   const stages = [
     "Application Received",
@@ -115,7 +92,7 @@ const [contractData, setContractData] = useState({
 });
 
   const [standards, setStandards] = useState<any[]>([]);
-const filteredClients = clients.filter((c) => {
+const filteredClients = (clients || []).filter((c) => {
   if (stageFilter && c.stage !== stageFilter) return false;
 
   if (ctx !== "both" && c.type?.toUpperCase() !== ctx.toUpperCase()) {
@@ -167,6 +144,7 @@ const overdue = 0; // temporary
 
 
 
+
 const filteredStandards =
   selectedClient?.type === "IAF"
     ? STANDARD_MASTER.IAF
@@ -174,7 +152,7 @@ const filteredStandards =
     ? STANDARD_MASTER.IATF
     : [];
 
-function handleSendToReview() {
+async function handleSendToReview() {
   if (!selectedClient) return;
 
   if (!note.trim()) {
@@ -182,44 +160,33 @@ function handleSendToReview() {
     return;
   }
 
-  const stored = JSON.parse(localStorage.getItem("applications") || "[]");
+  try {
+    await updateStatusMutation.mutateAsync({
+      id: selectedClient.application_id,
+      payload: {
+        status: "application_review",
+        note,
+      }
+    });
 
-  const updated = stored.map((app: any) => {
-    const code = `${app.type}-CLI-${new Date().getFullYear()}-${app.id}`;
-
-    if (code === selectedClient.code) {
-      return {
-        ...app,
-        stage: "Application Review",
-        reviewNote: note,
-      };
-    }
-    return app;
-  });
-
-  localStorage.setItem("applications", JSON.stringify(updated));
-
-  const refreshed = updated.map((app: any) => ({
-    name: app.client.organization_name,
-    code: `${app.type}-CLI-${new Date().getFullYear()}-${app.id}`,
-    email: app.contacts?.[0]?.email || "N/A",
-    phone: app.contacts?.[0]?.phone || "N/A",
-    date: `Applied ${new Date(app.id).toLocaleDateString()}`,
-    scope: app.app.proposed_scope || "N/A",
-    stage: app.stage || "Application Received",
-   progress: STAGE_PROGRESS_MAP[app.stage] || 14,
-stageCount: STAGE_COUNT_MAP[app.stage] || "Stage 1 of 7",
-    type: (app.type || "").toUpperCase().trim(),
-  }));
-
-  setClients(refreshed);
-
- 
-  toast.success("Moved to Application Review ");
-
-  setSelectedClient(null);
-  setNote("");
+    setSelectedClient(null);
+    setNote("");
+  } catch (err) {
+    console.error("🔥 Error updating stage:", err);
+  }
 }
+
+
+   
+
+
+    
+
+
+    
+
+
+
 
 function handleConfirmDecision() {
   if (!reason.trim()) {
@@ -257,11 +224,11 @@ function handleConfirmDecision() {
 
   // Toasts
   if (decisionType === "approve") {
-    toast.success("Moved to Contract Creation 🚀");
+    toast.success("Moved to Contract Creation ");
   } else if (decisionType === "reject") {
-    toast.error("Application Rejected ❌");
+    toast.error("Application Rejected ");
   } else {
-    toast("Sent back for more info 🔁");
+    toast("Sent back for more info ");
   }
 
   setDecisionType(null);
@@ -270,80 +237,41 @@ function handleConfirmDecision() {
 }
 
 
-function handleCreateContract() {
+async function handleCreateContract() {
   if (!contractData.contractNumber || !contractData.applicationId) {
-    toast.error("Please fill all required fields");
+    toast.error("Fill required fields");
     return;
   }
 
-  const stored = JSON.parse(localStorage.getItem("applications") || "[]");
+  try {
+    const toBase64 = (file: File) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
 
-  const updated = stored.map((app: any) => {
-    const code = `${app.type}-CLI-${new Date().getFullYear()}-${app.id}`;
-    if (code === selectedClient?.code) {
-      return {
-        ...app,
-        stage: "Contract Review",
-        contract: {
-          ...contractData,
-          status: "Draft",
-        },
-        applications: [
-          {
-            application_id: app.id,
-            status: "Draft",
-          },
-        ],
-      };
+    let base64File = null;
+
+    if (contractData.mandaysSheetFile) {
+      base64File = (await toBase64(contractData.mandaysSheetFile)) as string;
     }
-    return app;
-  });
 
-  localStorage.setItem("applications", JSON.stringify(updated));
+    await createContractMutation.mutateAsync({
+      application_id: contractData.applicationId,
+      contract_number: contractData.contractNumber,
+      start_date: contractData.startDate || undefined,
+      end_date: contractData.endDate || undefined,
+      notes: contractData.notes,
+      pdf_base64: base64File,
+    });
 
-  // ✅ REFRESH UI
-  setClients(
-    updated.map((app: any) => ({
-      name: app.client.organization_name,
-      code: `${app.type}-CLI-${new Date().getFullYear()}-${app.id}`,
-      email: app.contacts?.[0]?.email || "N/A",
-      phone: app.contacts?.[0]?.phone || "N/A",
-      date: `Applied ${new Date(app.id).toLocaleDateString()}`,
-      scope: app.app.proposed_scope || "N/A",
-      stage: app.stage || "Application Received",
-      progress: STAGE_PROGRESS_MAP[app.stage] || 14,
-stageCount: STAGE_COUNT_MAP[app.stage] || "Stage 1 of 7",
-      type: (app.type || "").toUpperCase().trim(),
-
-       contract: app.contract || null,
-      applications: [
-        {
-          application_id: app.id,
-          status: app.contract?.status || "Draft",
-        },
-      ],
-    }))
-  );
-
-  
-  setStageFilter(null);
-
-  toast.success("Contract Created ✅");
-
-  setIsContractModalOpen(false);
-  setContractData({
-    contractName: "",
-    contractNumber: "",
-    applicationId: "",
-    startDate: "",
-    endDate: "",
-    terms: "",
-    notes: "",
-    standardIds: [],
-    mandaysSheetFile: null,
-  });
-
-  setSelectedClient(null);
+    setSelectedClient(null);
+    setActiveModal(null);
+  } catch (err) {
+    console.error("🔥 Contract creation error:", err);
+  }
 }
 
 function handleCloseTask() {
@@ -369,7 +297,7 @@ function handleCloseTask() {
   });
 
   localStorage.setItem("applications", JSON.stringify(updated));
-  toast.success("Moved to Contract Signed ✅");
+  toast.success("Moved to Contract Signed ");
   window.location.reload();
 }
   
@@ -482,10 +410,61 @@ checklist: {
 
 const isReviewStage = selectedClient?.stage === "Application Review";
 
+async function handleApproveWithFile() {
+  if (!reviewFile) {
+    toast.error("Please upload review document ");
+    return;
+  }
+
+  try {
+    const appId = selectedClient.application_id;
+    if (!appId) return;
+
+    const toBase64 = (file: File) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
+
+    const base64File = (await toBase64(reviewFile)) as string;
+
+    await updateStatusMutation.mutateAsync({
+      id: appId,
+      payload: {
+        status: "contract_creation",
+        note: "Approved and moved to contract creation",
+        review_document: base64File,
+      }
+    });
+
+    setSelectedClient(null);
+    setReviewFile(null);
+  } catch (err) {
+    console.error("🔥 Approval error:", err);
+  }
+}
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-red-500">
+        <p className="font-semibold">Failed to load clients</p>
+        <p className="text-xs">{(error as any)?.message || "Unknown error"}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-amber-500 text-white rounded text-sm"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -682,8 +661,8 @@ onClick={() => {
       
 
    {activeModal === "review" && selectedClient && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-card bg-gray-900 w-[600px] rounded-xl p-6 border border-border">
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div className="bg-card bg-gray-900 w-[600px] max-h-[90vh] overflow-y-auto rounded-xl p-6 border border-border">
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-4">
@@ -729,30 +708,204 @@ onClick={() => {
   )}
 
   {/* ✅ APPLICATION REVIEW → SHOW ACTIONS */}
-  {selectedClient.stage === "Application Review" && (
-    <div className="flex gap-3 mt-4">
-      <button
-        onClick={() => setDecisionType("approve")}
-        className="flex-1 bg-green-500 py-2 rounded"
-      >
-        Approve
-      </button>
+{selectedClient.stage === "Application Review" && (
+  <div className="mt-4 space-y-4 text-sm text-gray-300">
 
-      <button
-        onClick={() => setDecisionType("reject")}
-        className="flex-1 bg-red-500 py-2 rounded"
-      >
-        Reject
-      </button>
+    <h3 className="text-white font-semibold text-lg border-b border-gray-700 pb-2">
+      Application Details
+    </h3>
+    
 
-      <button
-        onClick={() => setDecisionType("more_info")}
-        className="flex-1 bg-yellow-500 py-2 rounded"
-      >
-        Need Info
-      </button>
+    {/* GRID LAYOUT */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div>
+        <p className="text-gray-400 text-xs">Audit Type</p>
+        <p>{selectedClient.application?.type_of_audit || "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400 text-xs">Standards</p>
+        <p>{selectedClient.application?.standard || "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400 text-xs">IAF Code</p>
+        <p>{selectedClient.application?.iaf_code || "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400 text-xs">NACE Code</p>
+        <p>{selectedClient.application?.nace_code || "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400 text-xs">SIC Code</p>
+        <p>{selectedClient.application?.sic_code || "N/A"}</p>
+      </div>
+
+     
+
+    <div className="col-span-2">
+  <p className="text-gray-400 text-xs mb-2">Shifts</p>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    {Array.isArray(selectedClient.application?.shifts) ? (
+      selectedClient.application.shifts.map((s: any, idx: number) => (
+        <div
+          key={idx}
+          className="bg-[#1a1f2e] p-3 rounded-lg border border-gray-700"
+        >
+          <p className="font-semibold text-white mb-1">
+            Shift {idx + 1}
+          </p>
+          <p className="text-xs text-gray-400">Start: {s.start}</p>
+          <p className="text-xs text-gray-400">End: {s.end}</p>
+        </div>
+      ))
+    ) : (
+      <p className="text-xs text-gray-500">No shift data</p>
+    )}
+  </div>
+</div>
+
+      <div>
+        <p className="text-gray-400 text-xs">Legal Obligations</p>
+        <p>
+          {selectedClient.application?.legal_obligations ? "Yes" : "No"}
+        </p>
+      </div>
+
+      <div className="col-span-2">
+        <p className="text-gray-400 text-xs">Legal Details</p>
+        <p>{selectedClient.application?.legal_obligation_details || "N/A"}</p>
+      </div>
+
+      <div className="col-span-2">
+        <p className="text-gray-400 text-xs">Proposed Scope</p>
+        <p>{selectedClient.application?.proposed_scope || "N/A"}</p>
+      </div>
+
+      <div className="col-span-2">
+        <p className="text-gray-400 text-xs">Outsourced Processes</p>
+        <p>{selectedClient.application?.outsourced_processes || "N/A"}</p>
+      </div>
+
+      {/* ✅ ATTACHMENT VIEW */}
+{selectedClient.application?.attachment_base64 && (
+  <div className="col-span-2 mt-4">
+    <p className="text-gray-400 text-xs mb-2">Attachment</p>
+
+    {selectedClient.application.attachment_base64.startsWith("data:image") ? (
+      // 🖼 IMAGE PREVIEW
+      <img
+        src={selectedClient.application.attachment_base64}
+        alt="attachment"
+        className="max-h-60 rounded border border-gray-700"
+      />
+    ) : (
+      // 📄 PDF / FILE
+      <div className="flex gap-3">
+        <a
+          href={selectedClient.application.attachment_base64}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded text-white text-sm"
+        >
+          View Attachment
+        </a>
+
+        <a
+          href={selectedClient.application.attachment_base64}
+          download="attachment"
+          className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white text-sm"
+        >
+          Download
+        </a>
+      </div>
+    )}
+  </div>
+)}
+
     </div>
-  )}
+
+    {/* ✅ Manufacturing Sites FIX */}
+  <div className="mt-4">
+  <p className="text-gray-400 text-xs mb-2">Manufacturing Sites</p>
+
+  <div className="space-y-3">
+    {Array.isArray(selectedClient.application?.manufacturing_sites) ? (
+      selectedClient.application.manufacturing_sites.map((site: any, idx: number) => (
+        <div
+          key={idx}
+          className="bg-[#1a1f2e] p-4 rounded-lg border border-gray-700"
+        >
+          <p className="text-white font-semibold mb-2">
+            {site.site_name}
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+            <p><b>Address:</b> {site.address}</p>
+            <p><b>Total Employees:</b> {site.total_employees}</p>
+            <p><b>MFG Employees:</b> {site.employees_mfg}</p>
+          </div>
+
+          {site.remote_locations?.length > 0 && (
+            <div className="mt-3 border-t border-gray-700 pt-2">
+              <p className="text-gray-400 text-xs mb-1">Remote Locations</p>
+              {site.remote_locations.map((r: any, i: number) => (
+                <p key={i} className="text-xs text-gray-300">
+                  • {r.site_name} ({r.address})
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      ))
+    ) : (
+      <p className="text-xs text-gray-500">No data available</p>
+    )}
+  </div>
+</div>
+
+<input
+  type="file"
+  onChange={(e) => {
+    if (e.target.files && e.target.files[0]) {
+      setReviewFile(e.target.files[0]);
+    }
+  }}
+  className="w-full bg-[#1a1f2e] border border-border rounded p-2 text-sm text-white"
+/>
+
+
+    {/* ACTION BUTTONS */}
+   <div className="sticky -bottom-6 left-0 right-0 bg-gray-900 pt-3 pb-2 border-t border-gray-700 mt-6">
+  <div className="flex gap-3">
+   <button
+  onClick={handleApproveWithFile}
+  className="flex-1 bg-green-500 hover:bg-green-600 py-2 rounded font-medium"
+>
+  Approve
+</button>
+
+    <button
+      onClick={() => setDecisionType("reject")}
+      className="flex-1 bg-red-500 hover:bg-red-600 py-2 rounded font-medium"
+    >
+      Reject
+    </button>
+
+    <button
+      onClick={() => setDecisionType("more_info")}
+      className="flex-1 bg-yellow-500 hover:bg-yellow-600 py-2 rounded font-medium text-black"
+    >
+      Need Info
+    </button>
+  </div>
+</div>
+  </div>
+)}
 </>
 
     </div>
@@ -831,10 +984,10 @@ onClick={() => {
         >
           <option value="">-- Select Application --</option>
           {selectedClient.applications?.map((a: any) => (
-            <option key={a.application_id} value={a.application_id}>
-              {`APP-${a.application_id.toString().slice(-4).toUpperCase()}`} ({a.status})
-            </option>
-          ))}
+  <option key={a.application_id} value={a.application_id}>
+    {a.application_id} ({a.status})
+  </option>
+))}
         </select>
       </div>
 
@@ -1085,6 +1238,7 @@ onClick={() => {
         { key: "signed_contract_uploaded", label: "Contract Uploaded" },
       ].map((item) => (
         <label key={item.key} className="flex gap-2 text-sm">
+          //TODO: fix types errors
           <input
             type="checkbox"
             checked={signedData.checklist[item.key]}
