@@ -5,6 +5,6 @@ export const auditKeys = {
   detail: (id: string) => [...auditKeys.all, 'detail', id] as const,
   standards: () => [...auditKeys.all, 'standards'] as const,
   auditors: () => [...auditKeys.all, 'auditors'] as const,
-  clients: () => [...auditKeys.all, 'clients'] as const,
+  clients: () => [...auditKeys.all, 'clients-list'] as const,
   certificationBodies: () => [...auditKeys.all, 'certificationBodies'] as const,
 };
