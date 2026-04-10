@@ -1,4 +1,3 @@
-import { getUiStage } from "./status-stage-mapping";
 import { WorkflowStep } from "../components/ReportStatusRow";
 
 export type RightPanelTab = "documents" | "alerts";
@@ -10,48 +9,60 @@ export type AuditReport = {
   auditor: string;
   date: string;
   workflowSteps: WorkflowStep[];
-  status: string;
+  auditReportStatus: AuditReportStatusEnum | null;
+  // kept for display-only (e.g. "Report Under Review" badge) — not used for filtering
+  legacyStatus: string;
 };
+
+// The 5 enum values from audit_report_status_type
+export type AuditReportStatusEnum =
+  | "draft_report"
+  | "technical_review"
+  | "iatf_update"
+  | "nc_update"
+  | "certification_update";
 
 export type StageKey =
   | "all"
-  | "draft"
-  | "tech-review"
-  | "iatf-update"
-  | "nc-management"
-  | "certification"
-  | "rejected";
+  | "draft_report"
+  | "technical_review"
+  | "iatf_update"
+  | "nc_update"
+  | "certification_update";
 
-// Mock data removed in favor of real API data
-
-export const STAGE_ORDER = [
-  "Draft Report",
-  "Technical Review",
-  "IATF Update",
-  "NC Management",
-  "Certification",
+// Ordered list — matches the 5 workflow circles in order
+export const STAGE_ORDER: AuditReportStatusEnum[] = [
+  "draft_report",
+  "technical_review",
+  "iatf_update",
+  "nc_update",
+  "certification_update",
 ];
 
-export const STAGE_MAP_REVERSE: Record<string, string> = {
-  "draft": "Draft Report",
-  "tech-review": "Technical Review",
-  "iatf-update": "IATF Update",
-  "nc-management": "NC Management",
-  "certification": "Certification",
+// Human-readable labels for each enum value
+export const STAGE_LABELS: Record<AuditReportStatusEnum, string> = {
+  draft_report: "Draft Report",
+  technical_review: "Technical Review",
+  iatf_update: "IATF Update",
+  nc_update: "NC Management",
+  certification_update: "Certification",
 };
 
 export function transformAudit(apiAudit: any): AuditReport {
-  const currentStage = getUiStage(apiAudit.status);
-  const currentIndex = STAGE_ORDER.indexOf(currentStage);
+  const currentStatus = apiAudit.audit_report_status as AuditReportStatusEnum | null;
+  const currentIndex = currentStatus ? STAGE_ORDER.indexOf(currentStatus) : -1;
 
-  const workflowSteps = STAGE_ORDER.map((label, index) => {
-    let status: "done" | "active" | "pending" = "pending";
-    if (index < currentIndex) {
-      status = "done";
-    } else if (index === currentIndex) {
-      status = "active";
+  const workflowSteps: WorkflowStep[] = STAGE_ORDER.map((stageEnum, index) => {
+    let stepStatus: "done" | "active" | "pending" = "pending";
+    if (currentIndex >= 0) {
+      if (index < currentIndex) stepStatus = "done";
+      else if (index === currentIndex) stepStatus = "active";
     }
-    return { label, status };
+    return {
+      label: STAGE_LABELS[stageEnum],
+      status: stepStatus,
+      stageEnum,
+    };
   });
 
   return {
@@ -60,17 +71,13 @@ export function transformAudit(apiAudit: any): AuditReport {
     auditSubType: apiAudit.standard?.code || "Audit",
     auditor: apiAudit.lead_auditor?.full_name || "Unassigned",
     date: apiAudit.planned_date || "TBD",
-    status: apiAudit.status,
+    auditReportStatus: currentStatus,
+    legacyStatus: apiAudit.status ?? "",
     workflowSteps,
   };
 }
 
-export function countByStage(reports: AuditReport[], stage: keyof typeof STAGE_MAP_REVERSE | "all" | "rejected"): number {
+export function countByStage(reports: AuditReport[], stage: StageKey): number {
   if (stage === "all") return reports.length;
-  if (stage === "rejected") return reports.filter((r) => r.status === "denied").length;
-  
-  const uiStage = STAGE_MAP_REVERSE[stage];
-  if (!uiStage) return 0;
-  
-  return reports.filter((r) => getUiStage(r.status) === uiStage).length;
+  return reports.filter((r) => r.auditReportStatus === stage).length;
 }

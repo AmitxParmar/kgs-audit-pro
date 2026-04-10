@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { auditReportService } from '@/services/auditReportService';
 import { auditKeys } from './types';
 
-
-// data fetching queries with tanstack queries
 export const useAuditStats = () => {
   return useQuery({
     queryKey: auditKeys.stats(),
@@ -11,7 +9,10 @@ export const useAuditStats = () => {
   });
 };
 
-export const useGroupedAudits = (filters?: any) => {
+export const useGroupedAudits = (filters?: {
+  search?: string;
+  audit_report_status?: string;
+}) => {
   return useQuery({
     queryKey: auditKeys.grouped(filters),
     queryFn: () => auditReportService.getGroupedAudits(filters),
@@ -25,8 +26,6 @@ export const useAuditDetail = (id: string) => {
     enabled: !!id,
   });
 };
-
-
 
 export const useStandards = () => {
   return useQuery({

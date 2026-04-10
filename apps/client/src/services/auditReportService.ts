@@ -4,14 +4,15 @@ export const auditReportService = {
   getStats: async () => {
     const { data, error } = await supabase
       .from("audits")
-      .select("status");
+      .select("audit_report_status");
 
     if (error) throw error;
 
-    // Aggregate counts by status
+    // Aggregate counts by audit_report_status
     const stats: Record<string, number> = {};
     data.forEach((audit) => {
-      stats[audit.status] = (stats[audit.status] || 0) + 1;
+      const key = audit.audit_report_status ?? "unset";
+      stats[key] = (stats[key] || 0) + 1;
     });
 
     return stats;
@@ -20,9 +21,10 @@ export const auditReportService = {
   getGroupedAudits: async (filters?: {
     clientId?: string;
     cbId?: string;
-    status?: string;
+    audit_report_status?: string;
     fromDate?: string;
     toDate?: string;
+    search?: string;
   }, limit?: number) => {
     let query = supabase.from("audits").select(`
       *,
@@ -33,7 +35,7 @@ export const auditReportService = {
 
     if (filters?.clientId) query = query.eq("client_id", filters.clientId);
     if (filters?.cbId) query = query.eq("cb_id", filters.cbId);
-    if (filters?.status) query = query.eq("status", filters.status);
+    if (filters?.audit_report_status) query = query.eq("audit_report_status", filters.audit_report_status);
     if (filters?.fromDate) query = query.gte("planned_date", filters.fromDate);
     if (filters?.toDate) query = query.lte("planned_date", filters.toDate);
     if (limit) query = query.limit(limit);
@@ -43,8 +45,9 @@ export const auditReportService = {
 
     const grouped: Record<string, any[]> = {};
     data.forEach((audit) => {
-      if (!grouped[audit.status]) grouped[audit.status] = [];
-      
+      const key = audit.audit_report_status ?? "unset";
+      if (!grouped[key]) grouped[key] = [];
+
       // Flatten the lead_auditor nested structure for UI compatibility
       const flattenedAudit = {
         ...audit,
@@ -53,8 +56,8 @@ export const auditReportService = {
           full_name: audit.lead_auditor.user?.full_name || "Unknown"
         } : null
       };
-      
-      grouped[audit.status].push(flattenedAudit);
+
+      grouped[key].push(flattenedAudit);
     });
 
     return grouped;
@@ -75,6 +78,18 @@ export const auditReportService = {
     const { data, error } = await supabase
       .from("audits")
       .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  updateAuditReportStatus: async ({ id, audit_report_status }: { id: string; audit_report_status: string }) => {
+    const { data, error } = await supabase
+      .from("audits")
+      .update({ audit_report_status })
+      .eq("id", id)
       .select()
       .single();
 
@@ -104,8 +119,7 @@ export const auditReportService = {
       .order("user_id");
 
     if (error) throw error;
-    
-    // Flatten the result to match the expected UI structure
+
     return data.map((profile: any) => ({
       id: profile.id,
       full_name: profile.user?.full_name || "Unknown",

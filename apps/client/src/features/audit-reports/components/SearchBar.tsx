@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { AUDIT_REPORT_STATUS_MAP } from "./StatusBubble";
 
 type StatusOption = { value: string; label: string };
 
@@ -7,12 +8,16 @@ type SearchBarProps = {
   onChange: (v: string) => void;
   status: string;
   onStatusChange: (v: string) => void;
-  statusOptions?: StatusOption[];
   onReset?: () => void;
 };
 
-const defaultStatuses: StatusOption[] = [
-  { value: "all", label: "All Status" }
+// Build options from the canonical status map so they stay in sync automatically
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: "all", label: "All Stages" },
+  ...Object.entries(AUDIT_REPORT_STATUS_MAP).map(([val, { label }]) => ({
+    value: val,
+    label,
+  })),
 ];
 
 export default function SearchBar({
@@ -20,7 +25,6 @@ export default function SearchBar({
   onChange,
   status,
   onStatusChange,
-  statusOptions = defaultStatuses,
   onReset,
 }: SearchBarProps) {
   return (
@@ -59,14 +63,14 @@ export default function SearchBar({
         </button>
       )}
 
-      {/* Status dropdown */}
+      {/* Stage dropdown */}
       <div className="relative">
         <select
           value={status}
           onChange={(e) => onStatusChange(e.target.value)}
           className="h-10 rounded-xl border border-white/10 bg-black/20 pl-3 pr-8 text-sm text-slate-200 outline-none appearance-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition cursor-pointer"
         >
-          {statusOptions.map((s) => (
+          {STATUS_OPTIONS.map((s) => (
             <option key={s.value} value={s.value} className="bg-slate-900">
               {s.label}
             </option>

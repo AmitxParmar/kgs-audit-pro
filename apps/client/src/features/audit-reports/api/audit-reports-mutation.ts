@@ -11,3 +11,13 @@ export const useCreateAudit = () => {
     },
   });
 };
+
+export const useUpdateAuditReportStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: auditReportService.updateAuditReportStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: auditKeys.all });
+    },
+  });
+};
