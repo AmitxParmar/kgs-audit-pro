@@ -27,7 +27,7 @@ export const auditReportService = {
     let query = supabase.from("audits").select(`
       *,
       client:client_id(name),
-      lead_auditor:lead_auditor_id(full_name),
+      lead_auditor:lead_auditor_id(user:user_id(full_name)),
       standard:standard_id(code)
     `);
 
@@ -44,7 +44,17 @@ export const auditReportService = {
     const grouped: Record<string, any[]> = {};
     data.forEach((audit) => {
       if (!grouped[audit.status]) grouped[audit.status] = [];
-      grouped[audit.status].push(audit);
+      
+      // Flatten the lead_auditor nested structure for UI compatibility
+      const flattenedAudit = {
+        ...audit,
+        lead_auditor: audit.lead_auditor ? {
+          ...audit.lead_auditor,
+          full_name: audit.lead_auditor.user?.full_name || "Unknown"
+        } : null
+      };
+      
+      grouped[audit.status].push(flattenedAudit);
     });
 
     return grouped;
